@@ -5,7 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'firebase_options.dart';
 import 'providers/settings_provider.dart';
+import 'providers/messages_provider.dart';
 import 'services/fcm_service.dart';
+import 'models/message.dart';
+
+/// 全局 ProviderContainer 引用，用于消息处理
+late ProviderContainer _container;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,17 +24,17 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // 创建 ProviderContainer 以便初始化设置
-  final container = ProviderContainer();
+  _container = ProviderContainer();
 
   // 初始化设置
-  await container.read(settingsProvider.notifier).init();
+  await _container.read(settingsProvider.notifier).init();
 
   // 初始化 FCM 并获取 token
-  await _initializeFcm(container);
+  await _initializeFcm(_container);
 
   runApp(
     UncontrolledProviderScope(
-      container: container,
+      container: _container,
       child: const CCMonitorApp(),
     ),
   );
@@ -69,7 +74,45 @@ Future<void> _initializeFcm(ProviderContainer container) async {
       badge: true,
       sound: true,
     );
+
+    // 监听前台消息
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+    // 监听用户点击通知打开 App
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+
+    // 检查是否有初始消息（App 从通知启动）
+    final initialMessage = await messaging.getInitialMessage();
+    if (initialMessage != null) {
+      _handleMessageOpenedApp(initialMessage);
+    }
   } else {
     debugPrint('Notification permission denied: ${settings.authorizationStatus}');
   }
+}
+
+/// 处理前台消息
+void _handleForegroundMessage(RemoteMessage remoteMessage) {
+  debugPrint('Foreground message received: ${remoteMessage.data}');
+
+  // 解析消息
+  final message = FcmService.parseMessage(remoteMessage);
+  if (message != null) {
+    // 添加到消息列表
+    _container.read(messagesProvider.notifier).addMessage(message);
+    debugPrint('Message added to list: ${message.id}');
+  }
+}
+
+/// 处理用户点击通知打开 App
+void _handleMessageOpenedApp(RemoteMessage remoteMessage) {
+  debugPrint('Message opened app: ${remoteMessage.data}');
+
+  // 解析并添加消息
+  final message = FcmService.parseMessage(remoteMessage);
+  if (message != null) {
+    _container.read(messagesProvider.notifier).addMessage(message);
+  }
+
+  // TODO: 导航到消息详情页
 }

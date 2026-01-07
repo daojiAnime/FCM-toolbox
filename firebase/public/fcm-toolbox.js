@@ -1,20 +1,20 @@
 "use strict";
 
 var DEFAULT_APP_SETTINGS = {
-  apiKey: "AIzaSyBBd-gJUlg_HFdbWz6l90gJL2tHEm4itqY",
-  projectId: "fir-cloudmessaging-4e2cd",
-  appId: "1:322141800886:web:5cdb37ecedcc8c359d5917",
+  apiKey: "AIzaSyBd8qh_Je9h7XFBYmcGg2l6FhF209-xoIY",
+  projectId: "ccpush-45c62",
+  appId: "1:507149970914:web:e2157e04c092435bdf5dbb",
   fcm: {
     ttl: 60,
     priority: "high"
   },
   frd: {
     active: true,
-    databaseUrl: "https://fir-cloudmessaging-4e2cd.firebaseio.com"
+    databaseUrl: "https://ccpush-45c62-default-rtdb.firebaseio.com"
   },
   fa: {
     active: true,
-    measurementId: "G-W942B55TP2"
+    measurementId: "G-XC3M5LH7Y3"
   },
   hide: false
 };
@@ -414,22 +414,27 @@ function initSettings() {
 function initFirebase() {
   setFcmUsers(undefined);
   var settings = getSettings();
-  if (!(settings.frd || {}).databaseUrl) {
-    return;
-  }
 
+  // 总是初始化 Firebase App（Functions 需要）
   var config = {
     projectId: settings.projectId,
     appId: settings.appId,
     apiKey: settings.apiKey,
-    databaseURL: (settings.frd || {}).databaseUrl,
+    databaseURL: (settings.frd || {}).databaseUrl || undefined,
     measurementId: (settings.fa || {}).measurementId
   };
-  firebase.initializeApp(config);
+
+  try {
+    firebase.initializeApp(config);
+  } catch (e) {
+    // App 可能已经初始化
+    console.log("Firebase already initialized or error:", e.message);
+  }
+
   if ((settings.fa || {}).active && typeof firebase.analytics == 'function') {
     analytics = firebase.analytics();
   }
-  if ((settings.frd || {}).active && typeof firebase.database == 'function') {
+  if ((settings.frd || {}).active && (settings.frd || {}).databaseUrl && typeof firebase.database == 'function') {
     var devices = firebase.database().ref("devices");
     devices.on("value", function (snapshot) {
       var items = [];

@@ -1,15 +1,6 @@
 {
   "projects": {
-    "default": "fir-cloudmessaging-4e2cd"
-  },
-  "targets": {
-    "fir-cloudmessaging-4e2cd": {
-      "hosting": {
-        "fcm-toolbox-public": [
-          "fcm-toolbox-public"
-        ]
-      }
-    }
+    "default": "ccpush-45c62"
   },
   "etags": {}
 }

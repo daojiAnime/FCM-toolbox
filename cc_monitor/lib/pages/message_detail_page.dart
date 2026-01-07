@@ -9,6 +9,7 @@ import '../common/colors.dart';
 import '../models/message.dart';
 import '../models/payload/payload.dart';
 import '../providers/messages_provider.dart';
+import '../services/interaction_service.dart';
 
 /// 消息详情页面
 class MessageDetailPage extends ConsumerWidget {
@@ -63,7 +64,7 @@ class MessageDetailPage extends ConsumerWidget {
             const Divider(),
             const SizedBox(height: 16),
             // 消息内容
-            _buildContent(context, message),
+            _buildContent(context, ref, message),
           ],
         ),
       ),
@@ -133,7 +134,7 @@ class MessageDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, Message message) {
+  Widget _buildContent(BuildContext context, WidgetRef ref, Message message) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -145,7 +146,7 @@ class MessageDetailPage extends ConsumerWidget {
       CodePayload payload => _buildCodeContent(context, payload, isDark),
       MarkdownPayload payload => _buildMarkdownContent(context, payload),
       ImagePayload payload => _buildImageContent(context, payload),
-      InteractivePayload payload => _buildInteractiveContent(context, payload),
+      InteractivePayload payload => _buildInteractiveContent(context, ref, payload),
     };
   }
 
@@ -439,7 +440,11 @@ class MessageDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildInteractiveContent(BuildContext context, InteractivePayload payload) {
+  Widget _buildInteractiveContent(
+    BuildContext context,
+    WidgetRef ref,
+    InteractivePayload payload,
+  ) {
     final theme = Theme.of(context);
 
     return Column(
@@ -478,9 +483,7 @@ class MessageDetailPage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             OutlinedButton.icon(
-              onPressed: () {
-                // TODO: 发送拒绝指令
-              },
+              onPressed: () => _handleInteraction(context, ref, payload.requestId, false),
               icon: const Icon(Icons.close, size: 18),
               label: const Text('拒绝'),
               style: OutlinedButton.styleFrom(
@@ -490,9 +493,7 @@ class MessageDetailPage extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             FilledButton.icon(
-              onPressed: () {
-                // TODO: 发送允许指令
-              },
+              onPressed: () => _handleInteraction(context, ref, payload.requestId, true),
               icon: const Icon(Icons.check, size: 18),
               label: const Text('允许'),
               style: FilledButton.styleFrom(
@@ -503,6 +504,52 @@ class MessageDetailPage extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// 处理交互响应
+  Future<void> _handleInteraction(
+    BuildContext context,
+    WidgetRef ref,
+    String requestId,
+    bool approved,
+  ) async {
+    final interactionService = ref.read(interactionServiceProvider);
+
+    // 显示加载指示器
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final success = approved
+          ? await interactionService.approve(requestId)
+          : await interactionService.deny(requestId);
+
+      if (context.mounted) Navigator.pop(context); // 关闭加载指示器
+
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(approved ? '已批准' : '已拒绝'),
+            backgroundColor: approved ? MessageColors.complete : MessageColors.error,
+          ),
+        );
+        Navigator.pop(context); // 返回上一页
+      }
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context); // 关闭加载指示器
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('操作失败: $e'),
+            backgroundColor: MessageColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildInfoChip(
