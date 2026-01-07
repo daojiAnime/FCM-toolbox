@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../common/colors.dart';
+import '../models/message.dart';
+import '../models/payload/payload.dart';
 import '../models/session.dart';
 import '../providers/messages_provider.dart';
 import '../providers/session_provider.dart';
+import '../services/interaction_service.dart';
 import '../widgets/message_card/message_card.dart';
 import '../widgets/session_card.dart';
 import 'settings_page.dart';
@@ -135,6 +138,12 @@ class _MessagesTab extends ConsumerWidget {
                 ),
               );
             },
+            onApprove: message.payload is InteractivePayload
+                ? () => _handleInteraction(context, ref, message, true)
+                : null,
+            onDeny: message.payload is InteractivePayload
+                ? () => _handleInteraction(context, ref, message, false)
+                : null,
           ).animate().fadeIn(
             duration: const Duration(milliseconds: 300),
             delay: Duration(milliseconds: index * 30),
@@ -147,6 +156,58 @@ class _MessagesTab extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  /// 处理交互响应
+  Future<void> _handleInteraction(
+    BuildContext context,
+    WidgetRef ref,
+    Message message,
+    bool approved,
+  ) async {
+    final payload = message.payload as InteractivePayload;
+    final interactionService = ref.read(interactionServiceProvider);
+
+    // 显示加载指示器
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final success = approved
+          ? await interactionService.approve(payload.requestId)
+          : await interactionService.deny(payload.requestId);
+
+      // 关闭加载指示器
+      if (context.mounted) Navigator.pop(context);
+
+      if (success) {
+        // 更新消息状态为已处理
+        // TODO: 更新消息的 pending 状态
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(approved ? '已批准' : '已拒绝'),
+              backgroundColor: approved ? MessageColors.complete : MessageColors.error,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // 关闭加载指示器
+      if (context.mounted) Navigator.pop(context);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('操作失败: $e'),
+            backgroundColor: MessageColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildEmptyState(BuildContext context) {

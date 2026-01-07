@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 交互请求集合
+    match /interactions/{requestId} {
+      // 任何人可以读取（通过 requestId）
+      allow read: if true;
+
+      // 只有 Cloud Functions（admin SDK）可以创建
+      allow create: if false;
+
+      // 允许更新 status 和 response 字段（用于用户响应）
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['status', 'response', 'respondedAt'])
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['approved', 'denied'];
+
+      // 不允许删除
+      allow delete: if false;
+    }
+
+    // 设备注册集合（可选，用于管理设备）
+    match /devices/{deviceToken} {
+      allow read, write: if true;
+    }
+  }
+}
