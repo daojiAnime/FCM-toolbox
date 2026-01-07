@@ -119,7 +119,7 @@ Claude Code 权限确认 Hook
 
 使用方法:
 1. 配置 ~/.claude/settings.json 添加 hook
-2. 设置环境变量 CC_MONITOR_TOKEN (设备 FCM Token)
+2. 设置环境变量 FCM_DEVICE_TOKEN (设备 FCM Token)
 """
 
 import json
@@ -132,7 +132,7 @@ import urllib.error
 # 配置
 FIREBASE_PROJECT_ID = "ccpush-45c62"
 FUNCTIONS_BASE_URL = f"https://us-central1-{FIREBASE_PROJECT_ID}.cloudfunctions.net"
-DEVICE_TOKEN = os.environ.get("CC_MONITOR_TOKEN", "")
+DEVICE_TOKEN = os.environ.get("FCM_DEVICE_TOKEN", "")
 
 def call_function(name: str, data: dict) -> dict:
     """调用 Firebase Function"""
@@ -179,7 +179,7 @@ def request_permission(
         Exception: 其他错误
     """
     if not DEVICE_TOKEN:
-        raise ValueError("CC_MONITOR_TOKEN 环境变量未设置")
+        raise ValueError("FCM_DEVICE_TOKEN 环境变量未设置")
 
     # 创建交互请求
     create_result = call_function("createInteraction", {
@@ -314,7 +314,7 @@ if __name__ == "__main__":
 
 FIREBASE_PROJECT_ID="ccpush-45c62"
 FUNCTIONS_URL="https://us-central1-${FIREBASE_PROJECT_ID}.cloudfunctions.net"
-DEVICE_TOKEN="${CC_MONITOR_TOKEN}"
+DEVICE_TOKEN="${FCM_DEVICE_TOKEN}"
 
 # 读取 hook 输入
 HOOK_INPUT=$(cat)
@@ -385,7 +385,7 @@ echo '{"action": "allow"}'
 
 ```bash
 # 添加到 ~/.bashrc 或 ~/.zshrc
-export CC_MONITOR_TOKEN="你的FCM设备Token"
+export FCM_DEVICE_TOKEN="你的FCM设备Token"
 ```
 
 ## 测试
