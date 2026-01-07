@@ -26,6 +26,7 @@ import android.graphics.Color
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.O
 import android.os.Build.VERSION_CODES.TIRAMISU
+import android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -158,6 +159,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         checkNotificationsPermission()
+        checkFullScreenIntentPermission()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -274,5 +276,23 @@ class MainActivity : AppCompatActivity() {
         .make(binding.root, getString(R.string.snackbar_notification_permission_required), Snackbar.LENGTH_INDEFINITE)
         .setAction(R.string.snackbar_notification_permission_grant) { action() }
         .show()
+
+    /**
+     * 检查全屏意图权限（用于锁屏时亮屏功能）
+     * Android 14+ 需要用户手动授权
+     */
+    private fun checkFullScreenIntentPermission() {
+        if (Notifications.canUseFullScreenIntent(this)) return
+        // Android 14+ 需要引导用户授权
+        if (SDK_INT >= UPSIDE_DOWN_CAKE) {
+            Snackbar.make(
+                binding.root,
+                "需要「全屏通知」权限才能在锁屏时亮屏",
+                Snackbar.LENGTH_INDEFINITE
+            ).setAction("去设置") {
+                startActivity(Notifications.fullScreenIntentSettingsIntent(this))
+            }.show()
+        }
+    }
 
 }
