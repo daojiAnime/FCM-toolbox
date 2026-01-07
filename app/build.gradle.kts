@@ -16,7 +16,7 @@ android {
     compileSdk = 36
     defaultConfig {
         applicationId = "com.example.ccpush"
-        namespace = "com.example.ccpush"
+        namespace = "fr.smarquis.fcm"
         minSdk = 23
         targetSdk = 36
         versionCode = versionMajor * 1000000 + versionMinor * 10000 + versionPatch * 100 + versionBuild
