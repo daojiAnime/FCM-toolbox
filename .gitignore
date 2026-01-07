@@ -163,3 +163,7 @@ obj/
 
 # Kotlin
 .kotlin
+
+# Firebase service account (sensitive)
+service-account.json
+**/service-account.json
