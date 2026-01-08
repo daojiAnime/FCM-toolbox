@@ -27,10 +27,12 @@ val hasFileSigning = keystorePropertiesFile.exists()
 
 android {
     namespace = "io.github.daojianime.ccmonitor"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
+        // 启用 core library desugaring (ota_update 等插件需要)
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -87,4 +89,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Core library desugaring (Java 8+ API 在旧 Android 版本上的支持)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
