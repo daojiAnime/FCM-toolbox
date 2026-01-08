@@ -19,20 +19,11 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return linux;
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -58,5 +49,35 @@ class DefaultFirebaseOptions {
     databaseURL: 'https://ccpush-45c62-default-rtdb.firebaseio.com',
     storageBucket: 'ccpush-45c62.firebasestorage.app',
     iosBundleId: 'com.example.ccMonitor',
+  );
+
+  // macOS 配置 - 与 Android 共享相同的 Firebase 项目
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyCOxxzxhvhsVqqpAqO0GWvGPO2b_5RhPmo',
+    appId: '1:507149970914:android:2badc09fe6eea960df5dbb',
+    messagingSenderId: '507149970914',
+    projectId: 'ccpush-45c62',
+    databaseURL: 'https://ccpush-45c62-default-rtdb.firebaseio.com',
+    storageBucket: 'ccpush-45c62.firebasestorage.app',
+  );
+
+  // Windows 配置 - 与 Android 共享相同的 Firebase 项目
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyCOxxzxhvhsVqqpAqO0GWvGPO2b_5RhPmo',
+    appId: '1:507149970914:android:2badc09fe6eea960df5dbb',
+    messagingSenderId: '507149970914',
+    projectId: 'ccpush-45c62',
+    databaseURL: 'https://ccpush-45c62-default-rtdb.firebaseio.com',
+    storageBucket: 'ccpush-45c62.firebasestorage.app',
+  );
+
+  // Linux 配置 - 与 Android 共享相同的 Firebase 项目
+  static const FirebaseOptions linux = FirebaseOptions(
+    apiKey: 'AIzaSyCOxxzxhvhsVqqpAqO0GWvGPO2b_5RhPmo',
+    appId: '1:507149970914:android:2badc09fe6eea960df5dbb',
+    messagingSenderId: '507149970914',
+    projectId: 'ccpush-45c62',
+    databaseURL: 'https://ccpush-45c62-default-rtdb.firebaseio.com',
+    storageBucket: 'ccpush-45c62.firebasestorage.app',
   );
 }
