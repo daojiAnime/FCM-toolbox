@@ -9,10 +9,7 @@ import '../widgets/message_card/message_card.dart';
 
 /// 会话详情页面
 class SessionPage extends ConsumerWidget {
-  const SessionPage({
-    super.key,
-    required this.sessionId,
-  });
+  const SessionPage({super.key, required this.sessionId});
 
   final String sessionId;
 
@@ -24,13 +21,12 @@ class SessionPage extends ConsumerWidget {
     if (session == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('会话详情')),
-        body: const Center(
-          child: Text('会话不存在'),
-        ),
+        body: const Center(child: Text('会话不存在')),
       );
     }
 
-    final messages = ref.watch(messagesProvider)
+    final messages = ref
+        .watch(messagesProvider)
         .where((m) => m.sessionId == sessionId)
         .toList();
 
@@ -44,24 +40,18 @@ class SessionPage extends ConsumerWidget {
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 session.projectName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               background: _buildSessionHeader(context, session),
             ),
           ),
 
           // 会话状态卡片
-          SliverToBoxAdapter(
-            child: _buildStatusCard(context, session),
-          ),
+          SliverToBoxAdapter(child: _buildStatusCard(context, session)),
 
           // 进度信息
           if (session.progress != null && session.progress!.total > 0)
-            SliverToBoxAdapter(
-              child: _buildProgressCard(context, session),
-            ),
+            SliverToBoxAdapter(child: _buildProgressCard(context, session)),
 
           // 消息列表标题
           SliverToBoxAdapter(
@@ -77,7 +67,10 @@ class SessionPage extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(12),
@@ -121,27 +114,22 @@ class SessionPage extends ConsumerWidget {
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final message = messages[index];
-                  return MessageCard(
-                    message: message,
-                    onTap: () {
-                      // TODO: 导航到消息详情
-                    },
-                  ).animate().fadeIn(
-                    duration: const Duration(milliseconds: 300),
-                    delay: Duration(milliseconds: index * 50),
-                  );
-                },
-                childCount: messages.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final message = messages[index];
+                return MessageCard(
+                  message: message,
+                  onTap: () {
+                    // TODO: 导航到消息详情
+                  },
+                ).animate().fadeIn(
+                  duration: const Duration(milliseconds: 300),
+                  delay: Duration(milliseconds: index * 50),
+                );
+              }, childCount: messages.length),
             ),
 
           // 底部间距
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 32),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
@@ -269,11 +257,7 @@ class SessionPage extends ConsumerWidget {
     return Expanded(
       child: Column(
         children: [
-          Icon(
-            icon,
-            size: 24,
-            color: theme.colorScheme.primary,
-          ),
+          Icon(icon, size: 24, color: theme.colorScheme.primary),
           const SizedBox(height: 4),
           Text(
             value,

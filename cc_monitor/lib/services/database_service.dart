@@ -61,14 +61,16 @@ class AppDatabase extends _$AppDatabase {
 
   /// 插入消息
   Future<int> insertMessage(MessagesTableCompanion message) {
-    return into(messagesTable).insert(message, mode: InsertMode.insertOrReplace);
+    return into(
+      messagesTable,
+    ).insert(message, mode: InsertMode.insertOrReplace);
   }
 
   /// 获取所有消息
   Future<List<MessagesTableData>> getAllMessages() {
-    return (select(messagesTable)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
+    return (select(
+      messagesTable,
+    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
   }
 
   /// 获取会话消息
@@ -81,9 +83,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// 监听所有消息
   Stream<List<MessagesTableData>> watchAllMessages() {
-    return (select(messagesTable)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .watch();
+    return (select(
+      messagesTable,
+    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
   }
 
   /// 监听会话消息
@@ -102,8 +104,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// 删除消息
   Future<int> deleteMessage(String messageId) {
-    return (delete(messagesTable)..where((t) => t.messageId.equals(messageId)))
-        .go();
+    return (delete(
+      messagesTable,
+    )..where((t) => t.messageId.equals(messageId))).go();
   }
 
   /// 获取未读消息数
@@ -122,21 +125,23 @@ class AppDatabase extends _$AppDatabase {
 
   /// 插入或更新会话
   Future<int> upsertSession(SessionsTableCompanion session) {
-    return into(sessionsTable).insert(session, mode: InsertMode.insertOrReplace);
+    return into(
+      sessionsTable,
+    ).insert(session, mode: InsertMode.insertOrReplace);
   }
 
   /// 获取所有会话
   Future<List<SessionsTableData>> getAllSessions() {
-    return (select(sessionsTable)
-          ..orderBy([(t) => OrderingTerm.desc(t.lastUpdatedAt)]))
-        .get();
+    return (select(
+      sessionsTable,
+    )..orderBy([(t) => OrderingTerm.desc(t.lastUpdatedAt)])).get();
   }
 
   /// 监听所有会话
   Stream<List<SessionsTableData>> watchAllSessions() {
-    return (select(sessionsTable)
-          ..orderBy([(t) => OrderingTerm.desc(t.lastUpdatedAt)]))
-        .watch();
+    return (select(
+      sessionsTable,
+    )..orderBy([(t) => OrderingTerm.desc(t.lastUpdatedAt)])).watch();
   }
 
   /// 监听活跃会话
@@ -149,34 +154,42 @@ class AppDatabase extends _$AppDatabase {
 
   /// 获取会话
   Future<SessionsTableData?> getSession(String sessionId) {
-    return (select(sessionsTable)..where((t) => t.sessionId.equals(sessionId)))
-        .getSingleOrNull();
+    return (select(
+      sessionsTable,
+    )..where((t) => t.sessionId.equals(sessionId))).getSingleOrNull();
   }
 
   /// 更新会话状态
   Future<int> updateSessionStatus(String sessionId, String status) {
-    return (update(sessionsTable)..where((t) => t.sessionId.equals(sessionId)))
-        .write(SessionsTableCompanion(
-      status: Value(status),
-      lastUpdatedAt: Value(DateTime.now()),
-    ));
+    return (update(
+      sessionsTable,
+    )..where((t) => t.sessionId.equals(sessionId))).write(
+      SessionsTableCompanion(
+        status: Value(status),
+        lastUpdatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   /// 删除会话及其消息
   Future<void> deleteSession(String sessionId) async {
-    await (delete(messagesTable)
-          ..where((t) => t.sessionId.equals(sessionId)))
-        .go();
-    await (delete(sessionsTable)
-          ..where((t) => t.sessionId.equals(sessionId)))
-        .go();
+    await (delete(
+      messagesTable,
+    )..where((t) => t.sessionId.equals(sessionId))).go();
+    await (delete(
+      sessionsTable,
+    )..where((t) => t.sessionId.equals(sessionId))).go();
   }
 
   /// 清理旧数据 (保留最近 7 天)
   Future<void> cleanupOldData() async {
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
-    await (delete(messagesTable)..where((t) => t.createdAt.isSmallerThanValue(cutoff))).go();
-    await (delete(sessionsTable)..where((t) => t.lastUpdatedAt.isSmallerThanValue(cutoff))).go();
+    await (delete(
+      messagesTable,
+    )..where((t) => t.createdAt.isSmallerThanValue(cutoff))).go();
+    await (delete(
+      sessionsTable,
+    )..where((t) => t.lastUpdatedAt.isSmallerThanValue(cutoff))).go();
   }
 }
 

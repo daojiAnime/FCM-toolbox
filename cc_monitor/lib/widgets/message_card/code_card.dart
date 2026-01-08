@@ -45,9 +45,9 @@ class CodeMessageCard extends StatelessWidget {
         icon: const Icon(Icons.copy, size: 18),
         onPressed: () {
           Clipboard.setData(ClipboardData(text: code));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('代码已复制')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('代码已复制')));
         },
         tooltip: '复制代码',
         visualDensity: VisualDensity.compact,

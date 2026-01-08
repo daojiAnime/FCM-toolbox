@@ -36,101 +36,108 @@ class BaseMessageCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      color: isDark ? MessageColors.cardBackgroundDark : MessageColors.cardBackground,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
-        child: Row(
-          children: [
-            // 左侧彩色指示条
-            Container(
-              width: AppConstants.cardIndicatorWidth,
-              height: 80,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(AppConstants.cardBorderRadius),
-                  bottomLeft: Radius.circular(AppConstants.cardBorderRadius),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          color: isDark
+              ? MessageColors.cardBackgroundDark
+              : MessageColors.cardBackground,
+          child: InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+            child: Row(
+              children: [
+                // 左侧彩色指示条
+                Container(
+                  width: AppConstants.cardIndicatorWidth,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(AppConstants.cardBorderRadius),
+                      bottomLeft: Radius.circular(
+                        AppConstants.cardBorderRadius,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            // 内容区域
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(AppConstants.cardPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 标题行
-                    Row(
+                // 内容区域
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppConstants.cardPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          icon,
-                          size: 20,
-                          color: color,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: isRead
-                                  ? theme.colorScheme.onSurface.withValues(alpha: 0.7)
-                                  : theme.colorScheme.onSurface,
+                        // 标题行
+                        Row(
+                          children: [
+                            Icon(icon, size: 20, color: color),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: isRead
+                                      ? theme.colorScheme.onSurface.withValues(
+                                          alpha: 0.7,
+                                        )
+                                      : theme.colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            maxLines: 1,
+                            if (trailing != null) trailing!,
+                          ],
+                        ),
+                        // 副标题
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                            ),
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        if (trailing != null) trailing!,
-                      ],
-                    ),
-                    // 副标题
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle!,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    // 自定义内容
-                    if (child != null) ...[
-                      const SizedBox(height: 8),
-                      child!,
-                    ],
-                    // 时间戳
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 14,
-                          color: theme.colorScheme.outline,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatTimestamp(timestamp),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
-                          ),
+                        ],
+                        // 自定义内容
+                        if (child != null) ...[
+                          const SizedBox(height: 8),
+                          child!,
+                        ],
+                        // 时间戳
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: theme.colorScheme.outline,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatTimestamp(timestamp),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(duration: AppConstants.animationNormal).slideX(
+          ),
+        )
+        .animate()
+        .fadeIn(duration: AppConstants.animationNormal)
+        .slideX(
           begin: 0.1,
           end: 0,
           duration: AppConstants.animationNormal,

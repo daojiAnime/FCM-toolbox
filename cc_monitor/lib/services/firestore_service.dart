@@ -28,12 +28,12 @@ class FirestoreService {
         .orderBy('lastUpdatedAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return Session.fromJson(_convertTimestamps(data));
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return Session.fromJson(_convertTimestamps(data));
+          }).toList();
+        });
   }
 
   /// 监听单个会话
@@ -53,12 +53,12 @@ class FirestoreService {
         .orderBy('lastUpdatedAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return Session.fromJson(_convertTimestamps(data));
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return Session.fromJson(_convertTimestamps(data));
+          }).toList();
+        });
   }
 
   // ============================================================
@@ -71,10 +71,9 @@ class FirestoreService {
 
   /// 监听会话消息
   Stream<List<Message>> watchMessages(String sessionId) {
-    return _messagesRef(sessionId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
+    return _messagesRef(
+      sessionId,
+    ).orderBy('createdAt', descending: true).snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
@@ -107,11 +106,7 @@ class FirestoreService {
       id: '', // Firestore 自动生成
       sessionId: sessionId,
       type: CommandType.permissionResponse,
-      payload: {
-        'requestId': requestId,
-        'approved': approved,
-        'reason': reason,
-      },
+      payload: {'requestId': requestId, 'approved': approved, 'reason': reason},
       createdAt: DateTime.now(),
       respondedAt: DateTime.now(),
     );
@@ -129,10 +124,7 @@ class FirestoreService {
       id: '',
       sessionId: sessionId,
       type: CommandType.taskControl,
-      payload: {
-        'action': action.name,
-        'reason': reason,
-      },
+      payload: {'action': action.name, 'reason': reason},
       createdAt: DateTime.now(),
     );
 
@@ -149,10 +141,7 @@ class FirestoreService {
       id: '',
       sessionId: sessionId,
       type: CommandType.userInput,
-      payload: {
-        'requestId': requestId,
-        'input': input,
-      },
+      payload: {'requestId': requestId, 'input': input},
       createdAt: DateTime.now(),
     );
 
@@ -166,12 +155,12 @@ class FirestoreService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return Command.fromJson(_convertTimestamps(data));
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return Command.fromJson(_convertTimestamps(data));
+          }).toList();
+        });
   }
 
   // ============================================================

@@ -5,13 +5,13 @@ class MessageColors {
   MessageColors._();
 
   // 8 种消息类型颜色
-  static const Color progress = Color(0xFF2196F3);    // 蓝 - 进度
-  static const Color complete = Color(0xFF4CAF50);    // 绿 - 完成
-  static const Color error = Color(0xFFF44336);       // 红 - 错误
-  static const Color warning = Color(0xFFFF9800);     // 橙 - 警告
-  static const Color code = Color(0xFF607D8B);        // 灰 - 代码
-  static const Color markdown = Color(0xFF9C27B0);    // 紫 - Markdown
-  static const Color image = Color(0xFF00BCD4);       // 青 - 图片
+  static const Color progress = Color(0xFF2196F3); // 蓝 - 进度
+  static const Color complete = Color(0xFF4CAF50); // 绿 - 完成
+  static const Color error = Color(0xFFF44336); // 红 - 错误
+  static const Color warning = Color(0xFFFF9800); // 橙 - 警告
+  static const Color code = Color(0xFF607D8B); // 灰 - 代码
+  static const Color markdown = Color(0xFF9C27B0); // 紫 - Markdown
+  static const Color image = Color(0xFF00BCD4); // 青 - 图片
   static const Color interactive = Color(0xFFE91E63); // 粉 - 交互
 
   // Claude 品牌色

@@ -29,16 +29,12 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         clipBehavior: Clip.antiAlias,
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -49,9 +45,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -76,16 +70,12 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         clipBehavior: Clip.antiAlias,
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -96,9 +86,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -115,33 +103,19 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         letterSpacing: -0.25,
       ),
-      headlineSmall: GoogleFonts.inter(
-        fontWeight: FontWeight.w600,
-      ),
+      headlineSmall: GoogleFonts.inter(fontWeight: FontWeight.w600),
       // 标题
-      titleLarge: GoogleFonts.inter(
-        fontWeight: FontWeight.w600,
-      ),
-      titleMedium: GoogleFonts.inter(
-        fontWeight: FontWeight.w500,
-      ),
-      titleSmall: GoogleFonts.inter(
-        fontWeight: FontWeight.w500,
-      ),
+      titleLarge: GoogleFonts.inter(fontWeight: FontWeight.w600),
+      titleMedium: GoogleFonts.inter(fontWeight: FontWeight.w500),
+      titleSmall: GoogleFonts.inter(fontWeight: FontWeight.w500),
       // 正文
       bodyLarge: GoogleFonts.inter(),
       bodyMedium: GoogleFonts.inter(),
       bodySmall: GoogleFonts.inter(),
       // 标签
-      labelLarge: GoogleFonts.inter(
-        fontWeight: FontWeight.w500,
-      ),
-      labelMedium: GoogleFonts.inter(
-        fontWeight: FontWeight.w500,
-      ),
-      labelSmall: GoogleFonts.inter(
-        fontWeight: FontWeight.w500,
-      ),
+      labelLarge: GoogleFonts.inter(fontWeight: FontWeight.w500),
+      labelMedium: GoogleFonts.inter(fontWeight: FontWeight.w500),
+      labelSmall: GoogleFonts.inter(fontWeight: FontWeight.w500),
     );
   }
 }

@@ -3,11 +3,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
+import 'common/navigator_key.dart';
 import 'firebase_options.dart';
+import 'pages/message_detail_page.dart';
 import 'providers/settings_provider.dart';
 import 'providers/messages_provider.dart';
 import 'services/fcm_service.dart';
-import 'models/message.dart';
 
 /// 全局 ProviderContainer 引用，用于消息处理
 late ProviderContainer _container;
@@ -16,9 +17,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 初始化 Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // 注册后台消息处理器
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -87,7 +86,9 @@ Future<void> _initializeFcm(ProviderContainer container) async {
       _handleMessageOpenedApp(initialMessage);
     }
   } else {
-    debugPrint('Notification permission denied: ${settings.authorizationStatus}');
+    debugPrint(
+      'Notification permission denied: ${settings.authorizationStatus}',
+    );
   }
 }
 
@@ -112,7 +113,15 @@ void _handleMessageOpenedApp(RemoteMessage remoteMessage) {
   final message = FcmService.parseMessage(remoteMessage);
   if (message != null) {
     _container.read(messagesProvider.notifier).addMessage(message);
-  }
 
-  // TODO: 导航到消息详情页
+    // 导航到消息详情页
+    // 使用 WidgetsBinding 延迟执行，确保 Navigator 已准备就绪
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => MessageDetailPage(messageId: message.id),
+        ),
+      );
+    });
+  }
 }

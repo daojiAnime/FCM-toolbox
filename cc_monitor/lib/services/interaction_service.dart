@@ -8,10 +8,7 @@ final interactionServiceProvider = Provider<InteractionService>((ref) {
 });
 
 /// 交互响应状态
-enum InteractionStatus {
-  approved,
-  denied,
-}
+enum InteractionStatus { approved, denied }
 
 /// 交互服务 - 处理与 Firebase Functions 的双向通信
 class InteractionService {

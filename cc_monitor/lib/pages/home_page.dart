@@ -62,10 +62,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
-          _MessagesTab(),
-          _SessionsTab(),
-        ],
+        children: const [_MessagesTab(), _SessionsTab()],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -129,30 +126,33 @@ class _MessagesTab extends ConsumerWidget {
         itemBuilder: (context, index) {
           final message = messages[index];
           return MessageCard(
-            message: message,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MessageDetailPage(messageId: message.id),
-                ),
+                message: message,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MessageDetailPage(messageId: message.id),
+                    ),
+                  );
+                },
+                onApprove: message.payload is InteractivePayload
+                    ? () => _handleInteraction(context, ref, message, true)
+                    : null,
+                onDeny: message.payload is InteractivePayload
+                    ? () => _handleInteraction(context, ref, message, false)
+                    : null,
+              )
+              .animate()
+              .fadeIn(
+                duration: const Duration(milliseconds: 300),
+                delay: Duration(milliseconds: index * 30),
+              )
+              .slideX(
+                begin: 0.1,
+                end: 0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
               );
-            },
-            onApprove: message.payload is InteractivePayload
-                ? () => _handleInteraction(context, ref, message, true)
-                : null,
-            onDeny: message.payload is InteractivePayload
-                ? () => _handleInteraction(context, ref, message, false)
-                : null,
-          ).animate().fadeIn(
-            duration: const Duration(milliseconds: 300),
-            delay: Duration(milliseconds: index * 30),
-          ).slideX(
-            begin: 0.1,
-            end: 0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-          );
         },
       ),
     );
@@ -190,7 +190,9 @@ class _MessagesTab extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(approved ? '已批准' : '已拒绝'),
-              backgroundColor: approved ? MessageColors.complete : MessageColors.error,
+              backgroundColor: approved
+                  ? MessageColors.complete
+                  : MessageColors.error,
             ),
           );
         }
@@ -338,7 +340,9 @@ class _SessionsTab extends ConsumerWidget {
                 },
               ).animate().fadeIn(
                 duration: const Duration(milliseconds: 300),
-                delay: Duration(milliseconds: (activeSessions.length + index) * 50),
+                delay: Duration(
+                  milliseconds: (activeSessions.length + index) * 50,
+                ),
               );
             }),
           ],

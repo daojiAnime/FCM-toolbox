@@ -50,10 +50,11 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
 }
 
 /// 消息列表 Provider
-final messagesProvider =
-    StateNotifierProvider<MessagesNotifier, List<Message>>((ref) {
-  return MessagesNotifier();
-});
+final messagesProvider = StateNotifierProvider<MessagesNotifier, List<Message>>(
+  (ref) {
+    return MessagesNotifier();
+  },
+);
 
 /// 未读消息数量 Provider
 final unreadCountProvider = Provider<int>((ref) {

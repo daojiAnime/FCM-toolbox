@@ -75,7 +75,8 @@ sealed class Payload with _$Payload {
   }) = InteractivePayload;
 
   /// 从 JSON 解析
-  factory Payload.fromJson(Map<String, dynamic> json) => _$PayloadFromJson(json);
+  factory Payload.fromJson(Map<String, dynamic> json) =>
+      _$PayloadFromJson(json);
 
   /// 获取消息类型字符串
   String get type => switch (this) {

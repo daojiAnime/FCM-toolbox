@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'common/theme.dart';
 import 'common/constants.dart';
+import 'common/navigator_key.dart';
 import 'pages/home_page.dart';
 import 'providers/settings_provider.dart';
 
@@ -14,6 +15,7 @@ class CCMonitorApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,

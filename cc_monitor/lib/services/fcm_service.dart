@@ -38,11 +38,12 @@ class FcmService {
       _messaging.onTokenRefresh.listen(_onTokenRefresh);
 
       // 配置前台消息显示
-      await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
     }
   }
 
@@ -84,9 +85,12 @@ class FcmService {
 
       // 解析 FCM-toolbox text 格式
       if (data.containsKey('text')) {
-        final textData = jsonDecode(data['text'] as String) as Map<String, dynamic>;
+        final textData =
+            jsonDecode(data['text'] as String) as Map<String, dynamic>;
         return Message(
-          id: remoteMessage.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          id:
+              remoteMessage.messageId ??
+              DateTime.now().millisecondsSinceEpoch.toString(),
           sessionId: data['session_id'] ?? 'unknown',
           projectName: data['project_name'] ?? 'Unknown Project',
           projectPath: data['project_path'],
@@ -104,7 +108,9 @@ class FcmService {
           : data;
 
       return Message(
-        id: remoteMessage.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            remoteMessage.messageId ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         sessionId: data['session_id'] ?? 'unknown',
         projectName: data['project_name'] ?? 'Unknown Project',
         projectPath: data['project_path'],
@@ -137,21 +143,12 @@ class FcmService {
         toolCount: int.tryParse(extraData['tool_count'] ?? ''),
       );
     } else if (status == 'failure') {
-      return Payload.error(
-        title: title,
-        message: message,
-      );
+      return Payload.error(title: title, message: message);
     } else if (status == 'warning') {
-      return Payload.warning(
-        title: title,
-        message: message,
-      );
+      return Payload.warning(title: title, message: message);
     } else {
       // 默认为进度消息
-      return Payload.progress(
-        title: title,
-        description: message,
-      );
+      return Payload.progress(title: title, description: message);
     }
   }
 
@@ -159,61 +156,61 @@ class FcmService {
   static Payload _parsePayload(String type, Map<String, dynamic> data) {
     return switch (type) {
       'progress' => Payload.progress(
-          title: data['title'] ?? 'Processing',
-          description: data['description'],
-          current: data['current'] ?? 0,
-          total: data['total'] ?? 0,
-          currentStep: data['currentStep'],
-        ),
+        title: data['title'] ?? 'Processing',
+        description: data['description'],
+        current: data['current'] ?? 0,
+        total: data['total'] ?? 0,
+        currentStep: data['currentStep'],
+      ),
       'complete' => Payload.complete(
-          title: data['title'] ?? 'Complete',
-          summary: data['summary'],
-          duration: data['duration'],
-          toolCount: data['toolCount'],
-        ),
+        title: data['title'] ?? 'Complete',
+        summary: data['summary'],
+        duration: data['duration'],
+        toolCount: data['toolCount'],
+      ),
       'error' => Payload.error(
-          title: data['title'] ?? 'Error',
-          message: data['message'] ?? 'Unknown error',
-          stackTrace: data['stackTrace'],
-          suggestion: data['suggestion'],
-        ),
+        title: data['title'] ?? 'Error',
+        message: data['message'] ?? 'Unknown error',
+        stackTrace: data['stackTrace'],
+        suggestion: data['suggestion'],
+      ),
       'warning' => Payload.warning(
-          title: data['title'] ?? 'Warning',
-          message: data['message'] ?? 'Warning message',
-          action: data['action'],
-        ),
+        title: data['title'] ?? 'Warning',
+        message: data['message'] ?? 'Warning message',
+        action: data['action'],
+      ),
       'code' => Payload.code(
-          title: data['title'] ?? 'Code',
-          code: data['code'] ?? '',
-          language: data['language'],
-          filename: data['filename'],
-          startLine: data['startLine'],
-        ),
+        title: data['title'] ?? 'Code',
+        code: data['code'] ?? '',
+        language: data['language'],
+        filename: data['filename'],
+        startLine: data['startLine'],
+      ),
       'markdown' => Payload.markdown(
-          title: data['title'] ?? 'Content',
-          content: data['content'] ?? '',
-        ),
+        title: data['title'] ?? 'Content',
+        content: data['content'] ?? '',
+      ),
       'image' => Payload.image(
-          title: data['title'] ?? 'Image',
-          url: data['url'] ?? '',
-          caption: data['caption'],
-          width: data['width'],
-          height: data['height'],
-        ),
+        title: data['title'] ?? 'Image',
+        url: data['url'] ?? '',
+        caption: data['caption'],
+        width: data['width'],
+        height: data['height'],
+      ),
       'interactive' => Payload.interactive(
-          title: data['title'] ?? 'Action Required',
-          message: data['message'] ?? '',
-          requestId: data['requestId'] ?? '',
-          interactiveType: InteractiveType.values.firstWhere(
-            (e) => e.name == data['interactiveType'],
-            orElse: () => InteractiveType.confirm,
-          ),
-          metadata: data['metadata'],
+        title: data['title'] ?? 'Action Required',
+        message: data['message'] ?? '',
+        requestId: data['requestId'] ?? '',
+        interactiveType: InteractiveType.values.firstWhere(
+          (e) => e.name == data['interactiveType'],
+          orElse: () => InteractiveType.confirm,
         ),
+        metadata: data['metadata'],
+      ),
       _ => Payload.progress(
-          title: data['title'] ?? 'Message',
-          description: data['description'] ?? data['message'],
-        ),
+        title: data['title'] ?? 'Message',
+        description: data['description'] ?? data['message'],
+      ),
     };
   }
 }

@@ -13,9 +13,7 @@ class SettingsPage extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-      ),
+      appBar: AppBar(title: const Text('设置')),
       body: ListView(
         children: [
           // FCM Token 部分
@@ -70,7 +68,9 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: const Text('接收 Claude Code 的推送通知'),
                 value: settings.enableNotifications,
                 onChanged: (value) {
-                  ref.read(settingsProvider.notifier).setEnableNotifications(value);
+                  ref
+                      .read(settingsProvider.notifier)
+                      .setEnableNotifications(value);
                 },
               ),
               SwitchListTile(
@@ -79,7 +79,9 @@ class SettingsPage extends ConsumerWidget {
                 value: settings.enableSound,
                 onChanged: settings.enableNotifications
                     ? (value) {
-                        ref.read(settingsProvider.notifier).setEnableSound(value);
+                        ref
+                            .read(settingsProvider.notifier)
+                            .setEnableSound(value);
                       }
                     : null,
               ),
@@ -89,7 +91,9 @@ class SettingsPage extends ConsumerWidget {
                 value: settings.enableVibration,
                 onChanged: settings.enableNotifications
                     ? (value) {
-                        ref.read(settingsProvider.notifier).setEnableVibration(value);
+                        ref
+                            .read(settingsProvider.notifier)
+                            .setEnableVibration(value);
                       }
                     : null,
               ),
@@ -112,14 +116,8 @@ class SettingsPage extends ConsumerWidget {
                       value: ThemeMode.system,
                       child: Text('跟随系统'),
                     ),
-                    DropdownMenuItem(
-                      value: ThemeMode.light,
-                      child: Text('浅色'),
-                    ),
-                    DropdownMenuItem(
-                      value: ThemeMode.dark,
-                      child: Text('深色'),
-                    ),
+                    DropdownMenuItem(value: ThemeMode.light, child: Text('浅色')),
+                    DropdownMenuItem(value: ThemeMode.dark, child: Text('深色')),
                   ],
                   onChanged: (mode) {
                     if (mode != null) {
@@ -160,7 +158,9 @@ class SettingsPage extends ConsumerWidget {
                   ],
                   onChanged: (days) {
                     if (days != null) {
-                      ref.read(settingsProvider.notifier).setKeepMessagesForDays(days);
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setKeepMessagesForDays(days);
                     }
                   },
                 ),
@@ -249,11 +249,7 @@ class SettingsPage extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
             ] else ...[
-              const Icon(
-                Icons.warning_amber,
-                size: 48,
-                color: Colors.orange,
-              ),
+              const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
               const SizedBox(height: 16),
               const Text(
                 '尚未获取 FCM Token\n请确保已启用通知权限',
@@ -271,9 +267,9 @@ class SettingsPage extends ConsumerWidget {
             FilledButton(
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: token));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Token 已复制')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Token 已复制')));
               },
               child: const Text('复制 Token'),
             ),

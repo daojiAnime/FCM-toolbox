@@ -66,10 +66,11 @@ class SessionsNotifier extends StateNotifier<List<Session>> {
 }
 
 /// 会话列表 Provider
-final sessionsProvider =
-    StateNotifierProvider<SessionsNotifier, List<Session>>((ref) {
-  return SessionsNotifier();
-});
+final sessionsProvider = StateNotifierProvider<SessionsNotifier, List<Session>>(
+  (ref) {
+    return SessionsNotifier();
+  },
+);
 
 /// 当前选中的会话 ID
 final selectedSessionIdProvider = StateProvider<String?>((ref) => null);

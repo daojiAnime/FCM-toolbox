@@ -13,10 +13,7 @@ import '../services/interaction_service.dart';
 
 /// 消息详情页面
 class MessageDetailPage extends ConsumerWidget {
-  const MessageDetailPage({
-    super.key,
-    required this.messageId,
-  });
+  const MessageDetailPage({super.key, required this.messageId});
 
   final String messageId;
 
@@ -28,9 +25,7 @@ class MessageDetailPage extends ConsumerWidget {
     if (message == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('消息详情')),
-        body: const Center(
-          child: Text('消息不存在'),
-        ),
+        body: const Center(child: Text('消息不存在')),
       );
     }
 
@@ -146,7 +141,11 @@ class MessageDetailPage extends ConsumerWidget {
       CodePayload payload => _buildCodeContent(context, payload, isDark),
       MarkdownPayload payload => _buildMarkdownContent(context, payload),
       ImagePayload payload => _buildImageContent(context, payload),
-      InteractivePayload payload => _buildInteractiveContent(context, ref, payload),
+      InteractivePayload payload => _buildInteractiveContent(
+        context,
+        ref,
+        payload,
+      ),
     };
   }
 
@@ -157,10 +156,7 @@ class MessageDetailPage extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (payload.description != null) ...[
-          Text(
-            payload.description!,
-            style: theme.textTheme.bodyLarge,
-          ),
+          Text(payload.description!, style: theme.textTheme.bodyLarge),
           const SizedBox(height: 16),
         ],
         if (payload.total > 0) ...[
@@ -193,10 +189,7 @@ class MessageDetailPage extends ConsumerWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('$current / $total'),
-            Text('$percent%'),
-          ],
+          children: [Text('$current / $total'), Text('$percent%')],
         ),
         const SizedBox(height: 8),
         ClipRRect(
@@ -205,7 +198,9 @@ class MessageDetailPage extends ConsumerWidget {
             value: current / total,
             minHeight: 8,
             backgroundColor: MessageColors.progress.withValues(alpha: 0.2),
-            valueColor: const AlwaysStoppedAnimation<Color>(MessageColors.progress),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              MessageColors.progress,
+            ),
           ),
         ),
       ],
@@ -219,10 +214,7 @@ class MessageDetailPage extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (payload.summary != null) ...[
-          Text(
-            payload.summary!,
-            style: theme.textTheme.bodyLarge,
-          ),
+          Text(payload.summary!, style: theme.textTheme.bodyLarge),
           const SizedBox(height: 16),
         ],
         Wrap(
@@ -260,7 +252,9 @@ class MessageDetailPage extends ConsumerWidget {
           decoration: BoxDecoration(
             color: MessageColors.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: MessageColors.error.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: MessageColors.error.withValues(alpha: 0.3),
+            ),
           ),
           child: Row(
             children: [
@@ -287,10 +281,7 @@ class MessageDetailPage extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.lightbulb_outline,
-                  color: theme.colorScheme.primary,
-                ),
+                Icon(Icons.lightbulb_outline, color: theme.colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -338,17 +329,18 @@ class MessageDetailPage extends ConsumerWidget {
           const Icon(Icons.warning_amber, color: MessageColors.warning),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              payload.message,
-              style: theme.textTheme.bodyMedium,
-            ),
+            child: Text(payload.message, style: theme.textTheme.bodyMedium),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCodeContent(BuildContext context, CodePayload payload, bool isDark) {
+  Widget _buildCodeContent(
+    BuildContext context,
+    CodePayload payload,
+    bool isDark,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -360,18 +352,18 @@ class MessageDetailPage extends ConsumerWidget {
               Expanded(
                 child: Text(
                   payload.filename!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontFamily: 'monospace',
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.copy, size: 20),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: payload.code));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('代码已复制')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('代码已复制')));
                 },
               ),
             ],
@@ -420,9 +412,7 @@ class MessageDetailPage extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Center(
-                  child: Icon(Icons.broken_image, size: 48),
-                ),
+                child: const Center(child: Icon(Icons.broken_image, size: 48)),
               );
             },
           ),
@@ -450,12 +440,10 @@ class MessageDetailPage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          payload.message,
-          style: theme.textTheme.bodyLarge,
-        ),
+        Text(payload.message, style: theme.textTheme.bodyLarge),
         const SizedBox(height: 16),
-        if (payload.metadata != null && payload.metadata!.containsKey('toolName')) ...[
+        if (payload.metadata != null &&
+            payload.metadata!.containsKey('toolName')) ...[
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -483,7 +471,8 @@ class MessageDetailPage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             OutlinedButton.icon(
-              onPressed: () => _handleInteraction(context, ref, payload.requestId, false),
+              onPressed: () =>
+                  _handleInteraction(context, ref, payload.requestId, false),
               icon: const Icon(Icons.close, size: 18),
               label: const Text('拒绝'),
               style: OutlinedButton.styleFrom(
@@ -493,7 +482,8 @@ class MessageDetailPage extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             FilledButton.icon(
-              onPressed: () => _handleInteraction(context, ref, payload.requestId, true),
+              onPressed: () =>
+                  _handleInteraction(context, ref, payload.requestId, true),
               icon: const Icon(Icons.check, size: 18),
               label: const Text('允许'),
               style: FilledButton.styleFrom(
@@ -533,7 +523,9 @@ class MessageDetailPage extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(approved ? '已批准' : '已拒绝'),
-            backgroundColor: approved ? MessageColors.complete : MessageColors.error,
+            backgroundColor: approved
+                ? MessageColors.complete
+                : MessageColors.error,
           ),
         );
         Navigator.pop(context); // 返回上一页
@@ -606,10 +598,7 @@ class MessageDetailPage extends ConsumerWidget {
           ),
           child: SelectableText(
             code,
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 12,
-            ),
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
           ),
         ),
       ],
@@ -672,9 +661,7 @@ class MessageDetailPage extends ConsumerWidget {
               Navigator.pop(context); // 关闭对话框
               Navigator.pop(context); // 返回上一页
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: MessageColors.error,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: MessageColors.error),
             child: const Text('删除'),
           ),
         ],
