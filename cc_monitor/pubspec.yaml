@@ -1,7 +1,7 @@
 name: cc_monitor
 description: "Claude Code 任务监控与交互系统"
 publish_to: 'none'
-version: 1.0.1+1
+version: 1.0.2+1
 
 environment:
   sdk: ^3.7.0
