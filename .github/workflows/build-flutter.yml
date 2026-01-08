@@ -1,16 +1,18 @@
-name: Build CC Monitor APK
+name: Build & Release CC Monitor
 
 on:
   push:
-    branches: [main, master, feature/*]
-    paths:
-      - 'cc_monitor/**'
-      - '.github/workflows/build-flutter.yml'
-  pull_request:
-    branches: [main, master]
-    paths:
-      - 'cc_monitor/**'
+    tags:
+      - 'cc-monitor-v*'  # 例如: cc-monitor-v1.0.1
   workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (如 1.0.1)'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -22,6 +24,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            # 从 tag 提取版本号: cc-monitor-v1.0.1 -> 1.0.1
+            VERSION="${GITHUB_REF#refs/tags/cc-monitor-v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Building version: $VERSION"
+
+      - name: Update pubspec.yaml version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # 计算 build number (基于时间戳)
+          BUILD_NUMBER=$(date +%Y%m%d%H)
+          # 更新 version 行
+          sed -i "s/^version: .*/version: ${VERSION}+${BUILD_NUMBER}/" pubspec.yaml
+          echo "📝 Updated to version: ${VERSION}+${BUILD_NUMBER}"
+          grep "^version:" pubspec.yaml
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -45,10 +69,7 @@ jobs:
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
 
-      - name: Build APK (Debug)
-        run: flutter build apk --debug
-
-      # 设置签名配置（与 release.yml 保持一致）
+      # 设置签名配置
       - name: Setup Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -60,24 +81,45 @@ jobs:
             echo "⚠️ No keystore secret found, release build will use debug signing"
           fi
 
-      - name: Build APK (Release)
+      - name: Build Release APK
         env:
           KEYSTORE_FILE: release.keystore
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'android123' }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'release' }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'android123' }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: flutter build apk --release
 
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: cc-monitor-debug
-          path: cc_monitor/build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 30
+      - name: Rename APK with version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mv build/app/outputs/flutter-apk/app-release.apk \
+             build/app/outputs/flutter-apk/cc-monitor-v${VERSION}.apk
+          echo "📦 APK renamed to: cc-monitor-v${VERSION}.apk"
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: cc-monitor-release
-          path: cc_monitor/build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+          name: cc-monitor-v${{ steps.version.outputs.version }}
+          path: cc_monitor/build/app/outputs/flutter-apk/cc-monitor-v*.apk
+          retention-days: 90
+
+      # 仅在 tag 推送时创建 GitHub Release
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: CC Monitor v${{ steps.version.outputs.version }}
+          body: |
+            ## CC Monitor v${{ steps.version.outputs.version }}
+
+            Claude Code 任务监控与交互系统
+
+            ### 下载
+            - 📱 [cc-monitor-v${{ steps.version.outputs.version }}.apk](下载下方 Assets)
+
+            ### 更新内容
+            - 请查看 [Commits](../../commits/cc-monitor-v${{ steps.version.outputs.version }})
+          files: |
+            cc_monitor/build/app/outputs/flutter-apk/cc-monitor-v*.apk
+          draft: false
+          prerelease: false
