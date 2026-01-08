@@ -196,7 +196,7 @@ class HapiSseService {
       _client?.close();
       _client = http.Client();
 
-      final url = '${_config.serverUrl}/api/sse';
+      final url = '${_config.serverUrl}/api/events';
       debugPrint('[SSE] Connecting to $url');
 
       final request = http.Request('GET', Uri.parse(url));

@@ -39,7 +39,7 @@ class _DiffPageState extends ConsumerState<DiffPage> {
     });
 
     try {
-      final diffs = await apiService.getSessionDiff(widget.sessionId);
+      final diffs = await apiService.getGitDiffNumstat(widget.sessionId);
       setState(() {
         _diffs = diffs;
         _isLoading = false;

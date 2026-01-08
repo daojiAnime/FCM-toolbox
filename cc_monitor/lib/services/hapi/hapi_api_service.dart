@@ -163,12 +163,96 @@ class HapiApiService {
     }
   }
 
-  /// 发送消息到会话
-  Future<bool> sendMessage(String sessionId, String message) async {
+  /// 创建新会话
+  Future<Map<String, dynamic>?> createSession({
+    String? directory,
+    String? model,
+    bool? agent,
+    bool? yolo,
+    String? sessionType,
+  }) async {
     try {
       final response = await _dio.post(
-        _apiUrl('/sessions/$sessionId/message'),
-        data: {'message': message},
+        _apiUrl('/sessions'),
+        data: {
+          if (directory != null) 'directory': directory,
+          if (model != null) 'model': model,
+          if (agent != null) 'agent': agent,
+          if (yolo != null) 'yolo': yolo,
+          if (sessionType != null) 'sessionType': sessionType,
+        },
+      );
+      invalidateSessionsCache();
+      return response.data as Map<String, dynamic>?;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 切换到指定会话
+  Future<bool> switchSession(String sessionId) async {
+    try {
+      final response = await _dio.post(_apiUrl('/sessions/$sessionId/switch'));
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 中止会话
+  Future<bool> abortSession(String sessionId) async {
+    try {
+      final response = await _dio.post(_apiUrl('/sessions/$sessionId/abort'));
+      invalidateSessionsCache();
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 归档会话
+  Future<bool> archiveSession(String sessionId) async {
+    try {
+      final response = await _dio.post(_apiUrl('/sessions/$sessionId/archive'));
+      invalidateSessionsCache();
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 删除会话
+  Future<bool> deleteSession(String sessionId) async {
+    try {
+      final response = await _dio.delete(_apiUrl('/sessions/$sessionId'));
+      invalidateSessionsCache();
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 重命名会话
+  Future<bool> renameSession(String sessionId, String name) async {
+    try {
+      final response = await _dio.patch(
+        _apiUrl('/sessions/$sessionId'),
+        data: {'name': name},
+      );
+      invalidateSessionsCache();
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 设置权限模式
+  /// [mode] 可选值: 'default', 'plan', 'auto-edit', 'full-auto', 'none'
+  Future<bool> setPermissionMode(String sessionId, String mode) async {
+    try {
+      final response = await _dio.post(
+        _apiUrl('/sessions/$sessionId/permission-mode'),
+        data: {'mode': mode},
       );
       return response.statusCode == 200;
     } on DioException catch (e) {
@@ -176,21 +260,100 @@ class HapiApiService {
     }
   }
 
-  /// 响应权限请求
+  /// 设置模型
+  /// [model] 可选值: 'sonnet', 'opus', 'haiku'
+  Future<bool> setModel(String sessionId, String model) async {
+    try {
+      final response = await _dio.post(
+        _apiUrl('/sessions/$sessionId/model'),
+        data: {'model': model},
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 获取 Slash 命令列表
+  Future<List<Map<String, dynamic>>> getSlashCommands(String sessionId) async {
+    try {
+      final response = await _dio.get(
+        _apiUrl('/sessions/$sessionId/slash-commands'),
+      );
+      if (response.data is List) {
+        return List<Map<String, dynamic>>.from(response.data);
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 发送消息到会话
+  Future<bool> sendMessage(
+    String sessionId,
+    String text, {
+    String? localId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        _apiUrl('/sessions/$sessionId/messages'),
+        data: {'text': text, if (localId != null) 'localId': localId},
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 批准权限请求
+  Future<bool> approvePermission({
+    required String sessionId,
+    required String requestId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        _apiUrl('/sessions/$sessionId/permissions/$requestId/approve'),
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 拒绝权限请求
+  Future<bool> denyPermission({
+    required String sessionId,
+    required String requestId,
+    String? reason,
+  }) async {
+    try {
+      final response = await _dio.post(
+        _apiUrl('/sessions/$sessionId/permissions/$requestId/deny'),
+        data: {if (reason != null) 'reason': reason},
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 响应权限请求 (兼容方法)
+  @Deprecated('Use approvePermission or denyPermission instead')
   Future<bool> respondPermission({
     required String sessionId,
     required String requestId,
     required bool approved,
     String? reason,
   }) async {
-    try {
-      final response = await _dio.post(
-        _apiUrl('/sessions/$sessionId/permissions/$requestId'),
-        data: {'approved': approved, if (reason != null) 'reason': reason},
+    if (approved) {
+      return approvePermission(sessionId: sessionId, requestId: requestId);
+    } else {
+      return denyPermission(
+        sessionId: sessionId,
+        requestId: requestId,
+        reason: reason,
       );
-      return response.statusCode == 200;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
     }
   }
 
@@ -237,18 +400,45 @@ class HapiApiService {
     _cacheService?.remove(CacheKeys.machines);
   }
 
+  /// 检查路径是否存在
+  Future<Map<String, bool>> checkPathsExist(
+    String machineId,
+    List<String> paths,
+  ) async {
+    try {
+      final response = await _dio.post(
+        _apiUrl('/machines/$machineId/paths/exists'),
+        data: {'paths': paths},
+      );
+      if (response.data is Map) {
+        return Map<String, bool>.from(response.data);
+      }
+      return {};
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   /// 远程启动会话
   Future<Map<String, dynamic>?> spawnSession({
     required String machineId,
-    String? projectPath,
+    String? directory,
     String? model,
+    bool? agent,
+    bool? yolo,
+    String? sessionType,
+    String? worktreeName,
   }) async {
     try {
       final response = await _dio.post(
         _apiUrl('/machines/$machineId/spawn'),
         data: {
-          if (projectPath != null) 'projectPath': projectPath,
+          if (directory != null) 'directory': directory,
           if (model != null) 'model': model,
+          if (agent != null) 'agent': agent,
+          if (yolo != null) 'yolo': yolo,
+          if (sessionType != null) 'sessionType': sessionType,
+          if (worktreeName != null) 'worktreeName': worktreeName,
         },
       );
       return response.data as Map<String, dynamic>?;
@@ -291,28 +481,56 @@ class HapiApiService {
     }
   }
 
-  /// 获取会话 Git Diff
-  Future<List<HapiDiff>> getSessionDiff(String sessionId) async {
+  /// 获取 Git 状态
+  Future<Map<String, dynamic>?> getGitStatus(String sessionId) async {
     try {
-      final response = await _dio.get(_apiUrl('/sessions/$sessionId/diff'));
+      final response = await _dio.get(
+        _apiUrl('/sessions/$sessionId/git-status'),
+      );
+      return response.data as Map<String, dynamic>?;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 获取 Git Diff 统计
+  Future<List<HapiDiff>> getGitDiffNumstat(String sessionId) async {
+    try {
+      final response = await _dio.get(
+        _apiUrl('/sessions/$sessionId/git-diff-numstat'),
+      );
       if (response.data is List) {
         return (response.data as List)
             .map((e) => HapiDiff.fromJson(e as Map<String, dynamic>))
             .toList();
       }
-      // 如果返回单个 diff 对象
-      if (response.data is Map) {
-        final files = response.data['files'] as List?;
-        if (files != null) {
-          return files
-              .map((e) => HapiDiff.fromJson(e as Map<String, dynamic>))
-              .toList();
-        }
-      }
       return [];
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
+  }
+
+  /// 获取单个文件的 Git Diff
+  Future<String> getFileDiff(
+    String sessionId,
+    String path, {
+    bool staged = false,
+  }) async {
+    try {
+      final response = await _dio.get(
+        _apiUrl('/sessions/$sessionId/git-diff-file'),
+        queryParameters: {'path': path, if (staged) 'staged': true},
+      );
+      return response.data['diff'] as String? ?? '';
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// 获取会话 Git Diff (兼容方法)
+  @Deprecated('Use getGitDiffNumstat instead')
+  Future<List<HapiDiff>> getSessionDiff(String sessionId) async {
+    return getGitDiffNumstat(sessionId);
   }
 
   /// 获取终端 WebSocket URL

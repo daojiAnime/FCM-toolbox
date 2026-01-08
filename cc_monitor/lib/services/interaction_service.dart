@@ -126,11 +126,9 @@ class HapiInteractionService implements BaseInteractionService {
         return false;
       }
 
-      return await _apiService.respondPermission(
+      return await _apiService.approvePermission(
         sessionId: sessionId,
         requestId: requestId,
-        approved: true,
-        reason: response?['reason'] as String?,
       );
     } catch (e) {
       debugPrint('[hapi] Failed to approve: $e');
@@ -147,10 +145,9 @@ class HapiInteractionService implements BaseInteractionService {
         return false;
       }
 
-      return await _apiService.respondPermission(
+      return await _apiService.denyPermission(
         sessionId: sessionId,
         requestId: requestId,
-        approved: false,
         reason: response?['reason'] as String?,
       );
     } catch (e) {

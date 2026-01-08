@@ -102,7 +102,7 @@ class SpawnSessionNotifier extends StateNotifier<SpawnSessionState> {
     try {
       final result = await apiService.spawnSession(
         machineId: machineId,
-        projectPath: projectPath,
+        directory: projectPath,
         model: model,
       );
 

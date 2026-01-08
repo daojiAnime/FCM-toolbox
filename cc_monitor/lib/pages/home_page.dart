@@ -20,6 +20,7 @@ import 'session_page.dart';
 import 'message_detail_page.dart';
 import 'hapi_settings_page.dart';
 import 'machines_page.dart';
+import 'session_management_page.dart';
 
 /// 首页 - 消息列表
 class HomePage extends ConsumerStatefulWidget {
@@ -66,6 +67,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                   tooltip: '全部标记已读',
                 ),
               ),
+            ),
+          // 会话管理按钮（仅在会话标签页且 hapi 已启用时显示）
+          if (_selectedIndex == 1 && showMachinesTab)
+            IconButton(
+              icon: const Icon(Icons.settings_applications_outlined),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SessionManagementPage(),
+                  ),
+                );
+              },
+              tooltip: '会话管理',
             ),
           // hapi 连接状态指示器
           _buildHapiStatusIndicator(context, ref),
