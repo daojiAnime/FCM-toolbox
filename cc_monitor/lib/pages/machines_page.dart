@@ -555,20 +555,25 @@ class _SpawnSessionDialogState extends ConsumerState<_SpawnSessionDialog> {
               ),
             ),
             const SizedBox(height: 8),
-            ...(_models.map((model) {
-              return RadioListTile<String>(
-                value: model.$1,
-                groupValue: _selectedModel,
-                title: Text(model.$2),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedModel = value);
-                  }
-                },
-              );
-            })),
+            RadioGroup<String>(
+              groupValue: _selectedModel,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedModel = value);
+                }
+              },
+              child: Column(
+                children:
+                    _models.map((model) {
+                      return RadioListTile<String>(
+                        value: model.$1,
+                        title: Text(model.$2),
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                      );
+                    }).toList(),
+              ),
+            ),
 
             // 错误提示
             if (spawnState.error != null) ...[
