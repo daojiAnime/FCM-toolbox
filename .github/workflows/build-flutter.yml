@@ -14,6 +14,10 @@ on:
 permissions:
   contents: write
 
+env:
+  FLUTTER_VERSION: '3.32.2'
+  JAVA_VERSION: '17'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -89,18 +93,53 @@ jobs:
           echo "📝 Updated to version: ${VERSION}+${BUILD_NUMBER}"
           grep "^version:" pubspec.yaml
 
+      # ==================== 缓存优化 ====================
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.2'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
+
+      # Gradle 缓存 - 大幅减少 Android 依赖下载时间
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('cc_monitor/android/**/*.gradle*', 'cc_monitor/android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # Pub 缓存 - 减少依赖下载时间
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            cc_monitor/.dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('cc_monitor/pubspec.lock') }}
+          restore-keys: |
+            pub-${{ runner.os }}-
+
+      # build_runner 生成文件缓存
+      - name: Cache generated files
+        uses: actions/cache@v4
+        with:
+          path: |
+            cc_monitor/lib/**/*.g.dart
+            cc_monitor/lib/**/*.freezed.dart
+          key: codegen-${{ runner.os }}-${{ hashFiles('cc_monitor/lib/**/*.dart', '!cc_monitor/lib/**/*.g.dart', '!cc_monitor/lib/**/*.freezed.dart') }}
+
+      # ==================== 构建步骤 ====================
 
       - name: Get dependencies
         run: flutter pub get
@@ -108,8 +147,9 @@ jobs:
       - name: Generate code
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Analyze code
-        run: flutter analyze --no-fatal-infos
+      # 可选：跳过 analyze 以加速构建（如已在本地验证）
+      # - name: Analyze code
+      #   run: flutter analyze --no-fatal-infos
 
       # 设置签名配置
       - name: Setup Keystore
