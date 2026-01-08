@@ -49,34 +49,35 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          CURRENT_TAG="cc-monitor-v${VERSION}"
 
-          # 获取所有 cc-monitor-v* 标签并排序
+          # 获取所有 cc-monitor-v* 标签（排除当前标签）并排序
           git fetch --tags --quiet
-          LATEST_TAG=$(git tag -l 'cc-monitor-v*' | grep -E '^cc-monitor-v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 2 | head -n 1)
+          PREVIOUS_TAG=$(git tag -l 'cc-monitor-v*' | grep -E '^cc-monitor-v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^${CURRENT_TAG}$" | sort -V | tail -n 1)
 
-          if [ -z "$LATEST_TAG" ]; then
+          if [ -z "$PREVIOUS_TAG" ]; then
             echo "✅ 首次发布，跳过版本比较"
             exit 0
           fi
 
-          LATEST_VERSION="${LATEST_TAG#cc-monitor-v}"
+          PREVIOUS_VERSION="${PREVIOUS_TAG#cc-monitor-v}"
           echo "📊 当前版本: $VERSION"
-          echo "📊 上一版本: $LATEST_VERSION"
+          echo "📊 上一版本: $PREVIOUS_VERSION"
 
           # 比较版本号
           version_gt() {
             [ "$(printf '%s\n' "$1" "$2" | sort -V | tail -n 1)" = "$1" ] && [ "$1" != "$2" ]
           }
 
-          if ! version_gt "$VERSION" "$LATEST_VERSION"; then
+          if ! version_gt "$VERSION" "$PREVIOUS_VERSION"; then
             echo "❌ 版本号必须递增！"
-            echo "   当前标签: cc-monitor-v$VERSION"
-            echo "   上一版本: cc-monitor-v$LATEST_VERSION"
+            echo "   当前标签: $CURRENT_TAG"
+            echo "   上一版本: $PREVIOUS_TAG"
             echo "   请使用更高的版本号"
             exit 1
           fi
 
-          echo "✅ 版本号校验通过: $LATEST_VERSION → $VERSION"
+          echo "✅ 版本号校验通过: $PREVIOUS_VERSION → $VERSION"
 
       - name: Update pubspec.yaml version
         run: |
