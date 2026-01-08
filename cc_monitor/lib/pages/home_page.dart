@@ -9,11 +9,14 @@ import '../providers/messages_provider.dart';
 import '../providers/session_provider.dart';
 import '../services/interaction_service.dart';
 import '../services/firestore_message_service.dart';
+import '../services/hapi/hapi_config_service.dart';
+import '../services/hapi/hapi_sse_service.dart';
 import '../widgets/message_card/message_card.dart';
 import '../widgets/session_card.dart';
 import 'settings_page.dart';
 import 'session_page.dart';
 import 'message_detail_page.dart';
+import 'hapi_settings_page.dart';
 
 /// 首页 - 消息列表
 class HomePage extends ConsumerStatefulWidget {
@@ -58,6 +61,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
             ),
+          // hapi 连接状态指示器
+          _buildHapiStatusIndicator(context, ref),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
@@ -118,28 +123,122 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.delete_sweep, color: MessageColors.error),
-        title: const Text('清空消息'),
-        content: Text('确定要删除全部 $messageCount 条消息吗？\n此操作无法撤销。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+      builder:
+          (context) => AlertDialog(
+            icon: const Icon(Icons.delete_sweep, color: MessageColors.error),
+            title: const Text('清空消息'),
+            content: Text('确定要删除全部 $messageCount 条消息吗？\n此操作无法撤销。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  ref.read(messagesProvider.notifier).clearAll();
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('消息已清空')));
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: MessageColors.error,
+                ),
+                child: const Text('清空'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              ref.read(messagesProvider.notifier).clearAll();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('消息已清空')));
-            },
-            style: FilledButton.styleFrom(backgroundColor: MessageColors.error),
-            child: const Text('清空'),
+    );
+  }
+
+  /// 构建 hapi 连接状态指示器
+  Widget _buildHapiStatusIndicator(BuildContext context, WidgetRef ref) {
+    final hapiConfig = ref.watch(hapiConfigProvider);
+
+    // 如果未配置 hapi，不显示指示器
+    if (!hapiConfig.isConfigured) {
+      return const SizedBox.shrink();
+    }
+
+    // 如果已配置但未启用，显示禁用状态
+    if (!hapiConfig.enabled) {
+      return IconButton(
+        icon: const Icon(Icons.cloud_off_outlined),
+        onPressed: () => _navigateToHapiSettings(context),
+        tooltip: 'hapi 已禁用',
+        color: Theme.of(context).colorScheme.outline,
+      );
+    }
+
+    // 监听连接状态
+    final connectionStateAsync = ref.watch(hapiConnectionStateProvider);
+
+    return connectionStateAsync.when(
+      data: (state) {
+        final (icon, color, tooltip) = _getStatusDisplay(state);
+        return IconButton(
+          icon: Icon(icon),
+          onPressed: () => _navigateToHapiSettings(context),
+          tooltip: tooltip,
+          color: color,
+        );
+      },
+      loading:
+          () => IconButton(
+            icon: const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            onPressed: () => _navigateToHapiSettings(context),
+            tooltip: 'hapi 连接中...',
           ),
-        ],
+      error:
+          (error, stack) => IconButton(
+            icon: const Icon(Icons.cloud_off),
+            onPressed: () => _navigateToHapiSettings(context),
+            tooltip: 'hapi 连接错误',
+            color: MessageColors.error,
+          ),
+    );
+  }
+
+  /// 获取连接状态显示配置
+  (IconData, Color, String) _getStatusDisplay(HapiConnectionState state) {
+    return switch (state.status) {
+      HapiConnectionStatus.connected => (
+        Icons.cloud_done,
+        Colors.green,
+        'hapi 已连接',
       ),
+      HapiConnectionStatus.connecting => (
+        Icons.cloud_sync,
+        Colors.amber,
+        'hapi 连接中...',
+      ),
+      HapiConnectionStatus.reconnecting => (
+        Icons.cloud_sync,
+        Colors.orange,
+        'hapi 重连中 (${state.reconnectAttempts})',
+      ),
+      HapiConnectionStatus.disconnected => (
+        Icons.cloud_off_outlined,
+        Colors.grey,
+        'hapi 已断开',
+      ),
+      HapiConnectionStatus.error => (
+        Icons.cloud_off,
+        MessageColors.error,
+        'hapi 错误: ${state.errorMessage ?? "未知错误"}',
+      ),
+    };
+  }
+
+  /// 导航到 hapi 设置页面
+  void _navigateToHapiSettings(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const HapiSettingsPage()),
     );
   }
 }
@@ -175,12 +274,14 @@ class _MessagesTab extends ConsumerWidget {
                     ),
                   );
                 },
-                onApprove: message.payload is InteractivePayload
-                    ? () => _handleInteraction(context, ref, message, true)
-                    : null,
-                onDeny: message.payload is InteractivePayload
-                    ? () => _handleInteraction(context, ref, message, false)
-                    : null,
+                onApprove:
+                    message.payload is InteractivePayload
+                        ? () => _handleInteraction(context, ref, message, true)
+                        : null,
+                onDeny:
+                    message.payload is InteractivePayload
+                        ? () => _handleInteraction(context, ref, message, false)
+                        : null,
               )
               .animate()
               .fadeIn(
@@ -216,9 +317,10 @@ class _MessagesTab extends ConsumerWidget {
     );
 
     try {
-      final success = approved
-          ? await interactionService.approve(payload.requestId)
-          : await interactionService.deny(payload.requestId);
+      final success =
+          approved
+              ? await interactionService.approve(payload.requestId)
+              : await interactionService.deny(payload.requestId);
 
       // 关闭加载指示器
       if (context.mounted) Navigator.pop(context);
@@ -230,9 +332,8 @@ class _MessagesTab extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(approved ? '已批准' : '已拒绝'),
-              backgroundColor: approved
-                  ? MessageColors.complete
-                  : MessageColors.error,
+              backgroundColor:
+                  approved ? MessageColors.complete : MessageColors.error,
             ),
           );
         }
@@ -326,12 +427,10 @@ class _SessionsTab extends ConsumerWidget {
     }
 
     // 分离活跃和已完成会话
-    final activeSessions = sessions
-        .where((s) => s.status != SessionStatus.completed)
-        .toList();
-    final completedSessions = sessions
-        .where((s) => s.status == SessionStatus.completed)
-        .toList();
+    final activeSessions =
+        sessions.where((s) => s.status != SessionStatus.completed).toList();
+    final completedSessions =
+        sessions.where((s) => s.status == SessionStatus.completed).toList();
 
     return RefreshIndicator(
       onRefresh: () async {

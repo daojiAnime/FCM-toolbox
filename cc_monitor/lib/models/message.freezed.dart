@@ -104,42 +104,51 @@ class _$MessageCopyWithImpl<$Res, $Val extends Message>
   }) {
     return _then(
       _value.copyWith(
-            id: null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
-                      as String,
-            sessionId: null == sessionId
-                ? _value.sessionId
-                : sessionId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            payload: null == payload
-                ? _value.payload
-                : payload // ignore: cast_nullable_to_non_nullable
-                      as Payload,
-            projectName: null == projectName
-                ? _value.projectName
-                : projectName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            projectPath: freezed == projectPath
-                ? _value.projectPath
-                : projectPath // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            hookEvent: freezed == hookEvent
-                ? _value.hookEvent
-                : hookEvent // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            toolName: freezed == toolName
-                ? _value.toolName
-                : toolName // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            isRead: null == isRead
-                ? _value.isRead
-                : isRead // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            createdAt: null == createdAt
-                ? _value.createdAt
-                : createdAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
+            id:
+                null == id
+                    ? _value.id
+                    : id // ignore: cast_nullable_to_non_nullable
+                        as String,
+            sessionId:
+                null == sessionId
+                    ? _value.sessionId
+                    : sessionId // ignore: cast_nullable_to_non_nullable
+                        as String,
+            payload:
+                null == payload
+                    ? _value.payload
+                    : payload // ignore: cast_nullable_to_non_nullable
+                        as Payload,
+            projectName:
+                null == projectName
+                    ? _value.projectName
+                    : projectName // ignore: cast_nullable_to_non_nullable
+                        as String,
+            projectPath:
+                freezed == projectPath
+                    ? _value.projectPath
+                    : projectPath // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            hookEvent:
+                freezed == hookEvent
+                    ? _value.hookEvent
+                    : hookEvent // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            toolName:
+                freezed == toolName
+                    ? _value.toolName
+                    : toolName // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            isRead:
+                null == isRead
+                    ? _value.isRead
+                    : isRead // ignore: cast_nullable_to_non_nullable
+                        as bool,
+            createdAt:
+                null == createdAt
+                    ? _value.createdAt
+                    : createdAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime,
           )
           as $Val,
     );
@@ -206,42 +215,51 @@ class __$$MessageImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$MessageImpl(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        sessionId: null == sessionId
-            ? _value.sessionId
-            : sessionId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        payload: null == payload
-            ? _value.payload
-            : payload // ignore: cast_nullable_to_non_nullable
-                  as Payload,
-        projectName: null == projectName
-            ? _value.projectName
-            : projectName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        projectPath: freezed == projectPath
-            ? _value.projectPath
-            : projectPath // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        hookEvent: freezed == hookEvent
-            ? _value.hookEvent
-            : hookEvent // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        toolName: freezed == toolName
-            ? _value.toolName
-            : toolName // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        isRead: null == isRead
-            ? _value.isRead
-            : isRead // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        createdAt: null == createdAt
-            ? _value.createdAt
-            : createdAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
+        id:
+            null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                    as String,
+        sessionId:
+            null == sessionId
+                ? _value.sessionId
+                : sessionId // ignore: cast_nullable_to_non_nullable
+                    as String,
+        payload:
+            null == payload
+                ? _value.payload
+                : payload // ignore: cast_nullable_to_non_nullable
+                    as Payload,
+        projectName:
+            null == projectName
+                ? _value.projectName
+                : projectName // ignore: cast_nullable_to_non_nullable
+                    as String,
+        projectPath:
+            freezed == projectPath
+                ? _value.projectPath
+                : projectPath // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        hookEvent:
+            freezed == hookEvent
+                ? _value.hookEvent
+                : hookEvent // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        toolName:
+            freezed == toolName
+                ? _value.toolName
+                : toolName // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        isRead:
+            null == isRead
+                ? _value.isRead
+                : isRead // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        createdAt:
+            null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime,
       ),
     );
   }

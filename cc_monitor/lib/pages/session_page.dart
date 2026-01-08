@@ -26,10 +26,11 @@ class SessionPage extends ConsumerWidget {
       );
     }
 
-    final messages = ref
-        .watch(messagesProvider)
-        .where((m) => m.sessionId == sessionId)
-        .toList();
+    final messages =
+        ref
+            .watch(messagesProvider)
+            .where((m) => m.sessionId == sessionId)
+            .toList();
 
     return Scaffold(
       body: CustomScrollView(
@@ -123,8 +124,8 @@ class SessionPage extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            MessageDetailPage(messageId: message.id),
+                        builder:
+                            (_) => MessageDetailPage(messageId: message.id),
                       ),
                     );
                   },

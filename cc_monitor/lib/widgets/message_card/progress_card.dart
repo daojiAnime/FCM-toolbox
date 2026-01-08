@@ -39,52 +39,53 @@ class ProgressMessageCard extends StatelessWidget {
       subtitle: description,
       onTap: onTap,
       isRead: isRead,
-      child: hasProgress
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 进度条
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor: MessageColors.progress.withValues(
-                      alpha: 0.2,
-                    ),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      MessageColors.progress,
+      child:
+          hasProgress
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 进度条
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 8,
+                      backgroundColor: MessageColors.progress.withValues(
+                        alpha: 0.2,
+                      ),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        MessageColors.progress,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                // 进度文本
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (currentStep != null)
-                      Expanded(
-                        child: Text(
-                          currentStep!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
+                  const SizedBox(height: 8),
+                  // 进度文本
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (currentStep != null)
+                        Expanded(
+                          child: Text(
+                            currentStep!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        ),
+                      Text(
+                        '$current / $total',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: MessageColors.progress,
                         ),
                       ),
-                    Text(
-                      '$current / $total',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: MessageColors.progress,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            )
-          : null,
+                    ],
+                  ),
+                ],
+              )
+              : null,
     );
   }
 }

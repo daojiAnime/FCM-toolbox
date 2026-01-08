@@ -90,9 +90,10 @@ _$CodePayloadImpl _$$CodePayloadImplFromJson(Map<String, dynamic> json) =>
       language: json['language'] as String?,
       filename: json['filename'] as String?,
       startLine: (json['startLine'] as num?)?.toInt(),
-      changes: (json['changes'] as List<dynamic>?)
-          ?.map((e) => CodeChange.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      changes:
+          (json['changes'] as List<dynamic>?)
+              ?.map((e) => CodeChange.fromJson(e as Map<String, dynamic>))
+              .toList(),
       $type: json['runtimeType'] as String?,
     );
 

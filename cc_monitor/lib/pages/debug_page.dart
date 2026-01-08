@@ -112,23 +112,28 @@ class _DebugPageState extends ConsumerState<DebugPage> {
             // Messages
             Expanded(
               child: Card(
-                child: _messages.isEmpty
-                    ? const Center(child: Text('暂无消息'))
-                    : ListView.builder(
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = _messages[index];
-                          return ListTile(
-                            leading: _getTypeIcon(msg['type'] as String? ?? ''),
-                            title: Text(msg['title'] as String? ?? 'No title'),
-                            subtitle: Text(msg['message'] as String? ?? ''),
-                            trailing: Text(
-                              _formatTime(msg['createdAt']),
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          );
-                        },
-                      ),
+                child:
+                    _messages.isEmpty
+                        ? const Center(child: Text('暂无消息'))
+                        : ListView.builder(
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final msg = _messages[index];
+                            return ListTile(
+                              leading: _getTypeIcon(
+                                msg['type'] as String? ?? '',
+                              ),
+                              title: Text(
+                                msg['title'] as String? ?? 'No title',
+                              ),
+                              subtitle: Text(msg['message'] as String? ?? ''),
+                              trailing: Text(
+                                _formatTime(msg['createdAt']),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            );
+                          },
+                        ),
               ),
             ),
           ],
@@ -158,11 +163,12 @@ class _DebugPageState extends ConsumerState<DebugPage> {
     setState(() => _status = '正在获取消息...');
 
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection(collectionPath)
-          .orderBy('createdAt', descending: true)
-          .limit(20)
-          .get();
+      final snapshot =
+          await FirebaseFirestore.instance
+              .collection(collectionPath)
+              .orderBy('createdAt', descending: true)
+              .limit(20)
+              .get();
 
       setState(() {
         _messages = snapshot.docs.map((doc) => doc.data()).toList();

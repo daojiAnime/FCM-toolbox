@@ -44,9 +44,12 @@ _$SessionImpl _$$SessionImplFromJson(Map<String, dynamic> json) =>
       status:
           $enumDecodeNullable(_$SessionStatusEnumMap, json['status']) ??
           SessionStatus.running,
-      progress: json['progress'] == null
-          ? null
-          : SessionProgress.fromJson(json['progress'] as Map<String, dynamic>),
+      progress:
+          json['progress'] == null
+              ? null
+              : SessionProgress.fromJson(
+                json['progress'] as Map<String, dynamic>,
+              ),
       todos:
           (json['todos'] as List<dynamic>?)
               ?.map((e) => TodoItem.fromJson(e as Map<String, dynamic>))
@@ -55,9 +58,10 @@ _$SessionImpl _$$SessionImplFromJson(Map<String, dynamic> json) =>
       currentTask: json['currentTask'] as String?,
       startedAt: DateTime.parse(json['startedAt'] as String),
       lastUpdatedAt: DateTime.parse(json['lastUpdatedAt'] as String),
-      endedAt: json['endedAt'] == null
-          ? null
-          : DateTime.parse(json['endedAt'] as String),
+      endedAt:
+          json['endedAt'] == null
+              ? null
+              : DateTime.parse(json['endedAt'] as String),
       toolCallCount: (json['toolCallCount'] as num?)?.toInt() ?? 0,
     );
 

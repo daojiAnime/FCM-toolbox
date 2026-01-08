@@ -178,14 +178,15 @@ class FirestoreService {
       } else if (value is Map<String, dynamic>) {
         result[key] = _convertTimestamps(value);
       } else if (value is List) {
-        result[key] = value.map((item) {
-          if (item is Map<String, dynamic>) {
-            return _convertTimestamps(item);
-          } else if (item is Timestamp) {
-            return item.toDate().toIso8601String();
-          }
-          return item;
-        }).toList();
+        result[key] =
+            value.map((item) {
+              if (item is Map<String, dynamic>) {
+                return _convertTimestamps(item);
+              } else if (item is Timestamp) {
+                return item.toDate().toIso8601String();
+              }
+              return item;
+            }).toList();
       }
     }
 

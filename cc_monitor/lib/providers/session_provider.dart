@@ -21,32 +21,35 @@ class SessionsNotifier extends StateNotifier<List<Session>> {
 
   /// 更新会话状态
   void updateStatus(String id, SessionStatus status) {
-    state = state.map((session) {
-      if (session.id == id) {
-        return session.copyWith(status: status);
-      }
-      return session;
-    }).toList();
+    state =
+        state.map((session) {
+          if (session.id == id) {
+            return session.copyWith(status: status);
+          }
+          return session;
+        }).toList();
   }
 
   /// 更新会话进度
   void updateProgress(String id, SessionProgress progress) {
-    state = state.map((session) {
-      if (session.id == id) {
-        return session.copyWith(progress: progress);
-      }
-      return session;
-    }).toList();
+    state =
+        state.map((session) {
+          if (session.id == id) {
+            return session.copyWith(progress: progress);
+          }
+          return session;
+        }).toList();
   }
 
   /// 增加工具调用计数
   void incrementToolCallCount(String id) {
-    state = state.map((session) {
-      if (session.id == id) {
-        return session.copyWith(toolCallCount: session.toolCallCount + 1);
-      }
-      return session;
-    }).toList();
+    state =
+        state.map((session) {
+          if (session.id == id) {
+            return session.copyWith(toolCallCount: session.toolCallCount + 1);
+          }
+          return session;
+        }).toList();
   }
 
   /// 删除会话

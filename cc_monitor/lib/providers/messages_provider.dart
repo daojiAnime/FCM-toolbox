@@ -17,12 +17,13 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
 
   /// 标记消息为已读
   void markAsRead(String id) {
-    state = state.map((msg) {
-      if (msg.id == id) {
-        return msg.copyWith(isRead: true);
-      }
-      return msg;
-    }).toList();
+    state =
+        state.map((msg) {
+          if (msg.id == id) {
+            return msg.copyWith(isRead: true);
+          }
+          return msg;
+        }).toList();
   }
 
   /// 标记所有消息为已读
@@ -37,12 +38,13 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
 
   /// 更新消息（用于交互消息状态更新）
   void updateMessage(String id, Message Function(Message) update) {
-    state = state.map((msg) {
-      if (msg.id == id) {
-        return update(msg);
-      }
-      return msg;
-    }).toList();
+    state =
+        state.map((msg) {
+          if (msg.id == id) {
+            return update(msg);
+          }
+          return msg;
+        }).toList();
   }
 
   /// 清空所有消息

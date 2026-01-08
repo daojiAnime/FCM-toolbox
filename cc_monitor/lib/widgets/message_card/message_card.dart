@@ -52,9 +52,10 @@ class MessageCard extends StatelessWidget {
         subtitle: payload.message,
         onTap: onTap,
         isRead: message.isRead,
-        child: payload.suggestion != null
-            ? _buildSuggestion(context, payload.suggestion!)
-            : null,
+        child:
+            payload.suggestion != null
+                ? _buildSuggestion(context, payload.suggestion!)
+                : null,
       ),
       WarningPayload payload => BaseMessageCard(
         type: 'warning',
@@ -78,9 +79,10 @@ class MessageCard extends StatelessWidget {
         type: 'markdown',
         title: payload.title,
         timestamp: message.createdAt,
-        subtitle: payload.content.length > 100
-            ? '${payload.content.substring(0, 100)}...'
-            : payload.content,
+        subtitle:
+            payload.content.length > 100
+                ? '${payload.content.substring(0, 100)}...'
+                : payload.content,
         onTap: onTap,
         isRead: message.isRead,
       ),
@@ -120,20 +122,22 @@ class MessageCard extends StatelessWidget {
         child: CachedNetworkImage(
           imageUrl: payload.url,
           fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            height: 100,
-            color: Colors.grey.shade200,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-          errorWidget: (context, url, error) => Container(
-            height: 100,
-            color: Colors.grey.shade200,
-            child: const Center(
-              child: Icon(Icons.broken_image, size: 32, color: Colors.grey),
-            ),
-          ),
+          placeholder:
+              (context, url) => Container(
+                height: 100,
+                color: Colors.grey.shade200,
+                child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+          errorWidget:
+              (context, url, error) => Container(
+                height: 100,
+                color: Colors.grey.shade200,
+                child: const Center(
+                  child: Icon(Icons.broken_image, size: 32, color: Colors.grey),
+                ),
+              ),
         ),
       ),
     );

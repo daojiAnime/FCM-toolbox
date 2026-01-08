@@ -43,14 +43,14 @@ class CompleteMessageCard extends StatelessWidget {
       onTap: onTap,
       isRead: isRead,
       // trailing 已移除：状态标签"已完成"已提供足够信息
-      child: stats.isNotEmpty
-          ? Wrap(
-              spacing: 12,
-              children: stats
-                  .map((stat) => _buildStatChip(context, stat))
-                  .toList(),
-            )
-          : null,
+      child:
+          stats.isNotEmpty
+              ? Wrap(
+                spacing: 12,
+                children:
+                    stats.map((stat) => _buildStatChip(context, stat)).toList(),
+              )
+              : null,
     );
   }
 

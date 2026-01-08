@@ -65,11 +65,12 @@ class BaseMessageCard extends StatelessWidget {
                           title,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: isRead
-                                ? theme.colorScheme.onSurface.withValues(
-                                    alpha: 0.6,
-                                  )
-                                : theme.colorScheme.onSurface,
+                            color:
+                                isRead
+                                    ? theme.colorScheme.onSurface.withValues(
+                                      alpha: 0.6,
+                                    )
+                                    : theme.colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

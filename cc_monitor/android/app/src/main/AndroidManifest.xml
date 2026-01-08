@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Android 13+ 需要运行时请求通知权限 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- OTA 更新：安装 APK 权限 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <!-- OTA 更新：网络访问 -->
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:label="CC Monitor"

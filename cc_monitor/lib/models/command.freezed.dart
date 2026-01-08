@@ -97,38 +97,46 @@ class _$CommandCopyWithImpl<$Res, $Val extends Command>
   }) {
     return _then(
       _value.copyWith(
-            id: null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
-                      as String,
-            sessionId: null == sessionId
-                ? _value.sessionId
-                : sessionId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            type: null == type
-                ? _value.type
-                : type // ignore: cast_nullable_to_non_nullable
-                      as CommandType,
-            status: null == status
-                ? _value.status
-                : status // ignore: cast_nullable_to_non_nullable
-                      as CommandStatus,
-            payload: null == payload
-                ? _value.payload
-                : payload // ignore: cast_nullable_to_non_nullable
-                      as Map<String, dynamic>,
-            createdAt: null == createdAt
-                ? _value.createdAt
-                : createdAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            respondedAt: freezed == respondedAt
-                ? _value.respondedAt
-                : respondedAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime?,
-            expiresAt: freezed == expiresAt
-                ? _value.expiresAt
-                : expiresAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime?,
+            id:
+                null == id
+                    ? _value.id
+                    : id // ignore: cast_nullable_to_non_nullable
+                        as String,
+            sessionId:
+                null == sessionId
+                    ? _value.sessionId
+                    : sessionId // ignore: cast_nullable_to_non_nullable
+                        as String,
+            type:
+                null == type
+                    ? _value.type
+                    : type // ignore: cast_nullable_to_non_nullable
+                        as CommandType,
+            status:
+                null == status
+                    ? _value.status
+                    : status // ignore: cast_nullable_to_non_nullable
+                        as CommandStatus,
+            payload:
+                null == payload
+                    ? _value.payload
+                    : payload // ignore: cast_nullable_to_non_nullable
+                        as Map<String, dynamic>,
+            createdAt:
+                null == createdAt
+                    ? _value.createdAt
+                    : createdAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime,
+            respondedAt:
+                freezed == respondedAt
+                    ? _value.respondedAt
+                    : respondedAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
+            expiresAt:
+                freezed == expiresAt
+                    ? _value.expiresAt
+                    : expiresAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
           )
           as $Val,
     );
@@ -180,38 +188,46 @@ class __$$CommandImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$CommandImpl(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        sessionId: null == sessionId
-            ? _value.sessionId
-            : sessionId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        type: null == type
-            ? _value.type
-            : type // ignore: cast_nullable_to_non_nullable
-                  as CommandType,
-        status: null == status
-            ? _value.status
-            : status // ignore: cast_nullable_to_non_nullable
-                  as CommandStatus,
-        payload: null == payload
-            ? _value._payload
-            : payload // ignore: cast_nullable_to_non_nullable
-                  as Map<String, dynamic>,
-        createdAt: null == createdAt
-            ? _value.createdAt
-            : createdAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        respondedAt: freezed == respondedAt
-            ? _value.respondedAt
-            : respondedAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime?,
-        expiresAt: freezed == expiresAt
-            ? _value.expiresAt
-            : expiresAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime?,
+        id:
+            null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                    as String,
+        sessionId:
+            null == sessionId
+                ? _value.sessionId
+                : sessionId // ignore: cast_nullable_to_non_nullable
+                    as String,
+        type:
+            null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                    as CommandType,
+        status:
+            null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                    as CommandStatus,
+        payload:
+            null == payload
+                ? _value._payload
+                : payload // ignore: cast_nullable_to_non_nullable
+                    as Map<String, dynamic>,
+        createdAt:
+            null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime,
+        respondedAt:
+            freezed == respondedAt
+                ? _value.respondedAt
+                : respondedAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
+        expiresAt:
+            freezed == expiresAt
+                ? _value.expiresAt
+                : expiresAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
       ),
     );
   }
@@ -438,18 +454,21 @@ class _$PermissionResponsePayloadCopyWithImpl<
   }) {
     return _then(
       _value.copyWith(
-            requestId: null == requestId
-                ? _value.requestId
-                : requestId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            approved: null == approved
-                ? _value.approved
-                : approved // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            reason: freezed == reason
-                ? _value.reason
-                : reason // ignore: cast_nullable_to_non_nullable
-                      as String?,
+            requestId:
+                null == requestId
+                    ? _value.requestId
+                    : requestId // ignore: cast_nullable_to_non_nullable
+                        as String,
+            approved:
+                null == approved
+                    ? _value.approved
+                    : approved // ignore: cast_nullable_to_non_nullable
+                        as bool,
+            reason:
+                freezed == reason
+                    ? _value.reason
+                    : reason // ignore: cast_nullable_to_non_nullable
+                        as String?,
           )
           as $Val,
     );
@@ -492,18 +511,21 @@ class __$$PermissionResponsePayloadImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$PermissionResponsePayloadImpl(
-        requestId: null == requestId
-            ? _value.requestId
-            : requestId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        approved: null == approved
-            ? _value.approved
-            : approved // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        reason: freezed == reason
-            ? _value.reason
-            : reason // ignore: cast_nullable_to_non_nullable
-                  as String?,
+        requestId:
+            null == requestId
+                ? _value.requestId
+                : requestId // ignore: cast_nullable_to_non_nullable
+                    as String,
+        approved:
+            null == approved
+                ? _value.approved
+                : approved // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        reason:
+            freezed == reason
+                ? _value.reason
+                : reason // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -555,10 +577,9 @@ class _$PermissionResponsePayloadImpl implements _PermissionResponsePayload {
   @override
   @pragma('vm:prefer-inline')
   _$$PermissionResponsePayloadImplCopyWith<_$PermissionResponsePayloadImpl>
-  get copyWith =>
-      __$$PermissionResponsePayloadImplCopyWithImpl<
-        _$PermissionResponsePayloadImpl
-      >(this, _$identity);
+  get copyWith => __$$PermissionResponsePayloadImplCopyWithImpl<
+    _$PermissionResponsePayloadImpl
+  >(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
@@ -637,14 +658,16 @@ class _$TaskControlPayloadCopyWithImpl<$Res, $Val extends TaskControlPayload>
   $Res call({Object? action = null, Object? reason = freezed}) {
     return _then(
       _value.copyWith(
-            action: null == action
-                ? _value.action
-                : action // ignore: cast_nullable_to_non_nullable
-                      as TaskControlAction,
-            reason: freezed == reason
-                ? _value.reason
-                : reason // ignore: cast_nullable_to_non_nullable
-                      as String?,
+            action:
+                null == action
+                    ? _value.action
+                    : action // ignore: cast_nullable_to_non_nullable
+                        as TaskControlAction,
+            reason:
+                freezed == reason
+                    ? _value.reason
+                    : reason // ignore: cast_nullable_to_non_nullable
+                        as String?,
           )
           as $Val,
     );
@@ -679,14 +702,16 @@ class __$$TaskControlPayloadImplCopyWithImpl<$Res>
   $Res call({Object? action = null, Object? reason = freezed}) {
     return _then(
       _$TaskControlPayloadImpl(
-        action: null == action
-            ? _value.action
-            : action // ignore: cast_nullable_to_non_nullable
-                  as TaskControlAction,
-        reason: freezed == reason
-            ? _value.reason
-            : reason // ignore: cast_nullable_to_non_nullable
-                  as String?,
+        action:
+            null == action
+                ? _value.action
+                : action // ignore: cast_nullable_to_non_nullable
+                    as TaskControlAction,
+        reason:
+            freezed == reason
+                ? _value.reason
+                : reason // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -808,14 +833,16 @@ class _$UserInputPayloadCopyWithImpl<$Res, $Val extends UserInputPayload>
   $Res call({Object? requestId = null, Object? input = null}) {
     return _then(
       _value.copyWith(
-            requestId: null == requestId
-                ? _value.requestId
-                : requestId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            input: null == input
-                ? _value.input
-                : input // ignore: cast_nullable_to_non_nullable
-                      as String,
+            requestId:
+                null == requestId
+                    ? _value.requestId
+                    : requestId // ignore: cast_nullable_to_non_nullable
+                        as String,
+            input:
+                null == input
+                    ? _value.input
+                    : input // ignore: cast_nullable_to_non_nullable
+                        as String,
           )
           as $Val,
     );
@@ -850,14 +877,16 @@ class __$$UserInputPayloadImplCopyWithImpl<$Res>
   $Res call({Object? requestId = null, Object? input = null}) {
     return _then(
       _$UserInputPayloadImpl(
-        requestId: null == requestId
-            ? _value.requestId
-            : requestId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        input: null == input
-            ? _value.input
-            : input // ignore: cast_nullable_to_non_nullable
-                  as String,
+        requestId:
+            null == requestId
+                ? _value.requestId
+                : requestId // ignore: cast_nullable_to_non_nullable
+                    as String,
+        input:
+            null == input
+                ? _value.input
+                : input // ignore: cast_nullable_to_non_nullable
+                    as String,
       ),
     );
   }

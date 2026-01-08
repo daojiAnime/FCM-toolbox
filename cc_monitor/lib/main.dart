@@ -13,6 +13,7 @@ import 'providers/settings_provider.dart';
 import 'providers/messages_provider.dart';
 import 'services/fcm_service.dart';
 import 'services/firestore_message_service.dart';
+import 'services/hapi/hapi_config_service.dart';
 
 /// 全局 ProviderContainer 引用，用于消息处理
 late ProviderContainer _container;
@@ -31,6 +32,9 @@ void main() async {
 
   // 初始化设置
   await _container.read(settingsProvider.notifier).init();
+
+  // 初始化 hapi 配置
+  await _container.read(hapiConfigProvider.notifier).init();
 
   // 在支持的平台初始化 Firebase 和 FCM（Android、iOS、macOS）
   if (_isFirebaseSupported) {

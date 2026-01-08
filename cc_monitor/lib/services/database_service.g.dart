@@ -275,22 +275,26 @@ class $MessagesTableTable extends MessagesTable
   MessagesTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return MessagesTableData(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      messageId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}message_id'],
-      )!,
-      sessionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}session_id'],
-      )!,
-      projectName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}project_name'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}id'],
+          )!,
+      messageId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}message_id'],
+          )!,
+      sessionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}session_id'],
+          )!,
+      projectName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}project_name'],
+          )!,
       projectPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}project_path'],
@@ -303,22 +307,26 @@ class $MessagesTableTable extends MessagesTable
         DriftSqlType.string,
         data['${effectivePrefix}tool_name'],
       ),
-      payloadType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}payload_type'],
-      )!,
-      payloadJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}payload_json'],
-      )!,
-      isRead: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_read'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
+      payloadType:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}payload_type'],
+          )!,
+      payloadJson:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}payload_json'],
+          )!,
+      isRead:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_read'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
       syncedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}synced_at'],
@@ -392,22 +400,26 @@ class MessagesTableData extends DataClass
       messageId: Value(messageId),
       sessionId: Value(sessionId),
       projectName: Value(projectName),
-      projectPath: projectPath == null && nullToAbsent
-          ? const Value.absent()
-          : Value(projectPath),
-      hookEvent: hookEvent == null && nullToAbsent
-          ? const Value.absent()
-          : Value(hookEvent),
-      toolName: toolName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(toolName),
+      projectPath:
+          projectPath == null && nullToAbsent
+              ? const Value.absent()
+              : Value(projectPath),
+      hookEvent:
+          hookEvent == null && nullToAbsent
+              ? const Value.absent()
+              : Value(hookEvent),
+      toolName:
+          toolName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(toolName),
       payloadType: Value(payloadType),
       payloadJson: Value(payloadJson),
       isRead: Value(isRead),
       createdAt: Value(createdAt),
-      syncedAt: syncedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(syncedAt),
+      syncedAt:
+          syncedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(syncedAt),
     );
   }
 
@@ -482,20 +494,16 @@ class MessagesTableData extends DataClass
       id: data.id.present ? data.id.value : this.id,
       messageId: data.messageId.present ? data.messageId.value : this.messageId,
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
-      projectName: data.projectName.present
-          ? data.projectName.value
-          : this.projectName,
-      projectPath: data.projectPath.present
-          ? data.projectPath.value
-          : this.projectPath,
+      projectName:
+          data.projectName.present ? data.projectName.value : this.projectName,
+      projectPath:
+          data.projectPath.present ? data.projectPath.value : this.projectPath,
       hookEvent: data.hookEvent.present ? data.hookEvent.value : this.hookEvent,
       toolName: data.toolName.present ? data.toolName.value : this.toolName,
-      payloadType: data.payloadType.present
-          ? data.payloadType.value
-          : this.payloadType,
-      payloadJson: data.payloadJson.present
-          ? data.payloadJson.value
-          : this.payloadJson,
+      payloadType:
+          data.payloadType.present ? data.payloadType.value : this.payloadType,
+      payloadJson:
+          data.payloadJson.present ? data.payloadJson.value : this.payloadJson,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
@@ -1019,54 +1027,64 @@ class $SessionsTableTable extends SessionsTable
   SessionsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SessionsTableData(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      sessionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}session_id'],
-      )!,
-      projectName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}project_name'],
-      )!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}id'],
+          )!,
+      sessionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}session_id'],
+          )!,
+      projectName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}project_name'],
+          )!,
       projectPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}project_path'],
       ),
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
-      progressCurrent: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}progress_current'],
-      )!,
-      progressTotal: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}progress_total'],
-      )!,
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
+      progressCurrent:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}progress_current'],
+          )!,
+      progressTotal:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}progress_total'],
+          )!,
       currentStep: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}current_step'],
       ),
-      todosJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}todos_json'],
-      )!,
-      toolCallCount: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}tool_call_count'],
-      )!,
-      startedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}started_at'],
-      )!,
-      lastUpdatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}last_updated_at'],
-      )!,
+      todosJson:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}todos_json'],
+          )!,
+      toolCallCount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}tool_call_count'],
+          )!,
+      startedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}started_at'],
+          )!,
+      lastUpdatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}last_updated_at'],
+          )!,
       endedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}ended_at'],
@@ -1140,22 +1158,25 @@ class SessionsTableData extends DataClass
       id: Value(id),
       sessionId: Value(sessionId),
       projectName: Value(projectName),
-      projectPath: projectPath == null && nullToAbsent
-          ? const Value.absent()
-          : Value(projectPath),
+      projectPath:
+          projectPath == null && nullToAbsent
+              ? const Value.absent()
+              : Value(projectPath),
       status: Value(status),
       progressCurrent: Value(progressCurrent),
       progressTotal: Value(progressTotal),
-      currentStep: currentStep == null && nullToAbsent
-          ? const Value.absent()
-          : Value(currentStep),
+      currentStep:
+          currentStep == null && nullToAbsent
+              ? const Value.absent()
+              : Value(currentStep),
       todosJson: Value(todosJson),
       toolCallCount: Value(toolCallCount),
       startedAt: Value(startedAt),
       lastUpdatedAt: Value(lastUpdatedAt),
-      endedAt: endedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(endedAt),
+      endedAt:
+          endedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(endedAt),
     );
   }
 
@@ -1233,30 +1254,31 @@ class SessionsTableData extends DataClass
     return SessionsTableData(
       id: data.id.present ? data.id.value : this.id,
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
-      projectName: data.projectName.present
-          ? data.projectName.value
-          : this.projectName,
-      projectPath: data.projectPath.present
-          ? data.projectPath.value
-          : this.projectPath,
+      projectName:
+          data.projectName.present ? data.projectName.value : this.projectName,
+      projectPath:
+          data.projectPath.present ? data.projectPath.value : this.projectPath,
       status: data.status.present ? data.status.value : this.status,
-      progressCurrent: data.progressCurrent.present
-          ? data.progressCurrent.value
-          : this.progressCurrent,
-      progressTotal: data.progressTotal.present
-          ? data.progressTotal.value
-          : this.progressTotal,
-      currentStep: data.currentStep.present
-          ? data.currentStep.value
-          : this.currentStep,
+      progressCurrent:
+          data.progressCurrent.present
+              ? data.progressCurrent.value
+              : this.progressCurrent,
+      progressTotal:
+          data.progressTotal.present
+              ? data.progressTotal.value
+              : this.progressTotal,
+      currentStep:
+          data.currentStep.present ? data.currentStep.value : this.currentStep,
       todosJson: data.todosJson.present ? data.todosJson.value : this.todosJson,
-      toolCallCount: data.toolCallCount.present
-          ? data.toolCallCount.value
-          : this.toolCallCount,
+      toolCallCount:
+          data.toolCallCount.present
+              ? data.toolCallCount.value
+              : this.toolCallCount,
       startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
-      lastUpdatedAt: data.lastUpdatedAt.present
-          ? data.lastUpdatedAt.value
-          : this.lastUpdatedAt,
+      lastUpdatedAt:
+          data.lastUpdatedAt.present
+              ? data.lastUpdatedAt.value
+              : this.lastUpdatedAt,
       endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
     );
   }
@@ -1760,12 +1782,16 @@ class $$MessagesTableTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$MessagesTableTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$MessagesTableTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$MessagesTableTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$MessagesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$MessagesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$MessagesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -1822,9 +1848,16 @@ class $$MessagesTableTableTableManager
                 createdAt: createdAt,
                 syncedAt: syncedAt,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -2120,12 +2153,16 @@ class $$SessionsTableTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$SessionsTableTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$SessionsTableTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$SessionsTableTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$SessionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$SessionsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$SessionsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -2186,9 +2223,16 @@ class $$SessionsTableTableTableManager
                 lastUpdatedAt: lastUpdatedAt,
                 endedAt: endedAt,
               ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );

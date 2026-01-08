@@ -471,8 +471,13 @@ class MessageDetailPage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             OutlinedButton.icon(
-              onPressed: () =>
-                  _handleInteraction(context, ref, payload.requestId, false),
+              onPressed:
+                  () => _handleInteraction(
+                    context,
+                    ref,
+                    payload.requestId,
+                    false,
+                  ),
               icon: const Icon(Icons.close, size: 18),
               label: const Text('拒绝'),
               style: OutlinedButton.styleFrom(
@@ -482,8 +487,9 @@ class MessageDetailPage extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             FilledButton.icon(
-              onPressed: () =>
-                  _handleInteraction(context, ref, payload.requestId, true),
+              onPressed:
+                  () =>
+                      _handleInteraction(context, ref, payload.requestId, true),
               icon: const Icon(Icons.check, size: 18),
               label: const Text('允许'),
               style: FilledButton.styleFrom(
@@ -513,9 +519,10 @@ class MessageDetailPage extends ConsumerWidget {
     );
 
     try {
-      final success = approved
-          ? await interactionService.approve(requestId)
-          : await interactionService.deny(requestId);
+      final success =
+          approved
+              ? await interactionService.approve(requestId)
+              : await interactionService.deny(requestId);
 
       if (context.mounted) Navigator.pop(context); // 关闭加载指示器
 
@@ -523,9 +530,8 @@ class MessageDetailPage extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(approved ? '已批准' : '已拒绝'),
-            backgroundColor: approved
-                ? MessageColors.complete
-                : MessageColors.error,
+            backgroundColor:
+                approved ? MessageColors.complete : MessageColors.error,
           ),
         );
         Navigator.pop(context); // 返回上一页
@@ -647,25 +653,28 @@ class MessageDetailPage extends ConsumerWidget {
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('删除消息'),
-        content: const Text('确定要删除这条消息吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('删除消息'),
+            content: const Text('确定要删除这条消息吗？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  ref.read(messagesProvider.notifier).removeMessage(messageId);
+                  Navigator.pop(context); // 关闭对话框
+                  Navigator.pop(context); // 返回上一页
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: MessageColors.error,
+                ),
+                child: const Text('删除'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              ref.read(messagesProvider.notifier).removeMessage(messageId);
-              Navigator.pop(context); // 关闭对话框
-              Navigator.pop(context); // 返回上一页
-            },
-            style: FilledButton.styleFrom(backgroundColor: MessageColors.error),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
     );
   }
 }

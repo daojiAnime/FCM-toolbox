@@ -215,11 +215,12 @@ class FirestoreMessageService {
   /// 手动刷新消息
   Future<void> refresh() async {
     try {
-      final snapshot = await _firestore
-          .collection(_collectionPath)
-          .orderBy('createdAt', descending: true)
-          .limit(50)
-          .get();
+      final snapshot =
+          await _firestore
+              .collection(_collectionPath)
+              .orderBy('createdAt', descending: true)
+              .limit(50)
+              .get();
 
       for (var doc in snapshot.docs) {
         final docId = doc.id;

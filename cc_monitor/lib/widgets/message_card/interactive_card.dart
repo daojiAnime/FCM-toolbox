@@ -44,66 +44,68 @@ class InteractiveMessageCard extends StatelessWidget {
       subtitle: message,
       onTap: onTap,
       isRead: isRead,
-      child: isPending
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 工具信息 (如果有)
-                if (metadata != null && metadata!.containsKey('toolName')) ...[
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.terminal,
-                          size: 16,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            metadata!['toolName'] as String,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontFamily: 'monospace',
+      child:
+          isPending
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 工具信息 (如果有)
+                  if (metadata != null &&
+                      metadata!.containsKey('toolName')) ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.terminal,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              metadata!['toolName'] as String,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontFamily: 'monospace',
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                // 操作按钮
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: onDeny,
-                      icon: const Icon(Icons.close, size: 18),
-                      label: const Text('拒绝'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: MessageColors.error,
-                        side: const BorderSide(color: MessageColors.error),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    FilledButton.icon(
-                      onPressed: onApprove,
-                      icon: const Icon(Icons.check, size: 18),
-                      label: const Text('允许'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: MessageColors.complete,
-                      ),
-                    ),
+                    const SizedBox(height: 12),
                   ],
-                ),
-              ],
-            )
-          : _buildStatusBadge(context),
+                  // 操作按钮
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: onDeny,
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('拒绝'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: MessageColors.error,
+                          side: const BorderSide(color: MessageColors.error),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        onPressed: onApprove,
+                        icon: const Icon(Icons.check, size: 18),
+                        label: const Text('允许'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: MessageColors.complete,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+              : _buildStatusBadge(context),
     );
   }
 

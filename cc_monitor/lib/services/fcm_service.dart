@@ -104,9 +104,10 @@ class FcmService {
 
       // 解析结构化 payload
       final type = data['type'] as String;
-      final payloadJson = data.containsKey('payload')
-          ? jsonDecode(data['payload'] as String) as Map<String, dynamic>
-          : data;
+      final payloadJson =
+          data.containsKey('payload')
+              ? jsonDecode(data['payload'] as String) as Map<String, dynamic>
+              : data;
 
       return Message(
         id:
@@ -207,12 +208,13 @@ class FcmService {
           orElse: () => InteractiveType.confirm,
         ),
         // metadata 从 FCM 传来时是 JSON 字符串，需要解析
-        metadata: data['metadata'] != null
-            ? (data['metadata'] is String
-                  ? jsonDecode(data['metadata'] as String)
+        metadata:
+            data['metadata'] != null
+                ? (data['metadata'] is String
+                    ? jsonDecode(data['metadata'] as String)
                         as Map<String, dynamic>
-                  : data['metadata'] as Map<String, dynamic>)
-            : null,
+                    : data['metadata'] as Map<String, dynamic>)
+                : null,
       ),
       _ => Payload.progress(
         title: data['title'] ?? 'Message',

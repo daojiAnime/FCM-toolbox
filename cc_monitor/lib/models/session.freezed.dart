@@ -66,18 +66,21 @@ class _$SessionProgressCopyWithImpl<$Res, $Val extends SessionProgress>
   }) {
     return _then(
       _value.copyWith(
-            current: null == current
-                ? _value.current
-                : current // ignore: cast_nullable_to_non_nullable
-                      as int,
-            total: null == total
-                ? _value.total
-                : total // ignore: cast_nullable_to_non_nullable
-                      as int,
-            currentStep: freezed == currentStep
-                ? _value.currentStep
-                : currentStep // ignore: cast_nullable_to_non_nullable
-                      as String?,
+            current:
+                null == current
+                    ? _value.current
+                    : current // ignore: cast_nullable_to_non_nullable
+                        as int,
+            total:
+                null == total
+                    ? _value.total
+                    : total // ignore: cast_nullable_to_non_nullable
+                        as int,
+            currentStep:
+                freezed == currentStep
+                    ? _value.currentStep
+                    : currentStep // ignore: cast_nullable_to_non_nullable
+                        as String?,
           )
           as $Val,
     );
@@ -116,18 +119,21 @@ class __$$SessionProgressImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$SessionProgressImpl(
-        current: null == current
-            ? _value.current
-            : current // ignore: cast_nullable_to_non_nullable
-                  as int,
-        total: null == total
-            ? _value.total
-            : total // ignore: cast_nullable_to_non_nullable
-                  as int,
-        currentStep: freezed == currentStep
-            ? _value.currentStep
-            : currentStep // ignore: cast_nullable_to_non_nullable
-                  as String?,
+        current:
+            null == current
+                ? _value.current
+                : current // ignore: cast_nullable_to_non_nullable
+                    as int,
+        total:
+            null == total
+                ? _value.total
+                : total // ignore: cast_nullable_to_non_nullable
+                    as int,
+        currentStep:
+            freezed == currentStep
+                ? _value.currentStep
+                : currentStep // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -265,18 +271,21 @@ class _$TodoItemCopyWithImpl<$Res, $Val extends TodoItem>
   }) {
     return _then(
       _value.copyWith(
-            content: null == content
-                ? _value.content
-                : content // ignore: cast_nullable_to_non_nullable
-                      as String,
-            status: null == status
-                ? _value.status
-                : status // ignore: cast_nullable_to_non_nullable
-                      as String,
-            activeForm: freezed == activeForm
-                ? _value.activeForm
-                : activeForm // ignore: cast_nullable_to_non_nullable
-                      as String?,
+            content:
+                null == content
+                    ? _value.content
+                    : content // ignore: cast_nullable_to_non_nullable
+                        as String,
+            status:
+                null == status
+                    ? _value.status
+                    : status // ignore: cast_nullable_to_non_nullable
+                        as String,
+            activeForm:
+                freezed == activeForm
+                    ? _value.activeForm
+                    : activeForm // ignore: cast_nullable_to_non_nullable
+                        as String?,
           )
           as $Val,
     );
@@ -315,18 +324,21 @@ class __$$TodoItemImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$TodoItemImpl(
-        content: null == content
-            ? _value.content
-            : content // ignore: cast_nullable_to_non_nullable
-                  as String,
-        status: null == status
-            ? _value.status
-            : status // ignore: cast_nullable_to_non_nullable
-                  as String,
-        activeForm: freezed == activeForm
-            ? _value.activeForm
-            : activeForm // ignore: cast_nullable_to_non_nullable
-                  as String?,
+        content:
+            null == content
+                ? _value.content
+                : content // ignore: cast_nullable_to_non_nullable
+                    as String,
+        status:
+            null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                    as String,
+        activeForm:
+            freezed == activeForm
+                ? _value.activeForm
+                : activeForm // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -509,50 +521,61 @@ class _$SessionCopyWithImpl<$Res, $Val extends Session>
   }) {
     return _then(
       _value.copyWith(
-            id: null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
-                      as String,
-            projectName: null == projectName
-                ? _value.projectName
-                : projectName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            projectPath: freezed == projectPath
-                ? _value.projectPath
-                : projectPath // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            status: null == status
-                ? _value.status
-                : status // ignore: cast_nullable_to_non_nullable
-                      as SessionStatus,
-            progress: freezed == progress
-                ? _value.progress
-                : progress // ignore: cast_nullable_to_non_nullable
-                      as SessionProgress?,
-            todos: null == todos
-                ? _value.todos
-                : todos // ignore: cast_nullable_to_non_nullable
-                      as List<TodoItem>,
-            currentTask: freezed == currentTask
-                ? _value.currentTask
-                : currentTask // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            startedAt: null == startedAt
-                ? _value.startedAt
-                : startedAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            lastUpdatedAt: null == lastUpdatedAt
-                ? _value.lastUpdatedAt
-                : lastUpdatedAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            endedAt: freezed == endedAt
-                ? _value.endedAt
-                : endedAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime?,
-            toolCallCount: null == toolCallCount
-                ? _value.toolCallCount
-                : toolCallCount // ignore: cast_nullable_to_non_nullable
-                      as int,
+            id:
+                null == id
+                    ? _value.id
+                    : id // ignore: cast_nullable_to_non_nullable
+                        as String,
+            projectName:
+                null == projectName
+                    ? _value.projectName
+                    : projectName // ignore: cast_nullable_to_non_nullable
+                        as String,
+            projectPath:
+                freezed == projectPath
+                    ? _value.projectPath
+                    : projectPath // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            status:
+                null == status
+                    ? _value.status
+                    : status // ignore: cast_nullable_to_non_nullable
+                        as SessionStatus,
+            progress:
+                freezed == progress
+                    ? _value.progress
+                    : progress // ignore: cast_nullable_to_non_nullable
+                        as SessionProgress?,
+            todos:
+                null == todos
+                    ? _value.todos
+                    : todos // ignore: cast_nullable_to_non_nullable
+                        as List<TodoItem>,
+            currentTask:
+                freezed == currentTask
+                    ? _value.currentTask
+                    : currentTask // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            startedAt:
+                null == startedAt
+                    ? _value.startedAt
+                    : startedAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime,
+            lastUpdatedAt:
+                null == lastUpdatedAt
+                    ? _value.lastUpdatedAt
+                    : lastUpdatedAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime,
+            endedAt:
+                freezed == endedAt
+                    ? _value.endedAt
+                    : endedAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
+            toolCallCount:
+                null == toolCallCount
+                    ? _value.toolCallCount
+                    : toolCallCount // ignore: cast_nullable_to_non_nullable
+                        as int,
           )
           as $Val,
     );
@@ -627,50 +650,61 @@ class __$$SessionImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$SessionImpl(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        projectName: null == projectName
-            ? _value.projectName
-            : projectName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        projectPath: freezed == projectPath
-            ? _value.projectPath
-            : projectPath // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        status: null == status
-            ? _value.status
-            : status // ignore: cast_nullable_to_non_nullable
-                  as SessionStatus,
-        progress: freezed == progress
-            ? _value.progress
-            : progress // ignore: cast_nullable_to_non_nullable
-                  as SessionProgress?,
-        todos: null == todos
-            ? _value._todos
-            : todos // ignore: cast_nullable_to_non_nullable
-                  as List<TodoItem>,
-        currentTask: freezed == currentTask
-            ? _value.currentTask
-            : currentTask // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        startedAt: null == startedAt
-            ? _value.startedAt
-            : startedAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        lastUpdatedAt: null == lastUpdatedAt
-            ? _value.lastUpdatedAt
-            : lastUpdatedAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        endedAt: freezed == endedAt
-            ? _value.endedAt
-            : endedAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime?,
-        toolCallCount: null == toolCallCount
-            ? _value.toolCallCount
-            : toolCallCount // ignore: cast_nullable_to_non_nullable
-                  as int,
+        id:
+            null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                    as String,
+        projectName:
+            null == projectName
+                ? _value.projectName
+                : projectName // ignore: cast_nullable_to_non_nullable
+                    as String,
+        projectPath:
+            freezed == projectPath
+                ? _value.projectPath
+                : projectPath // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        status:
+            null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                    as SessionStatus,
+        progress:
+            freezed == progress
+                ? _value.progress
+                : progress // ignore: cast_nullable_to_non_nullable
+                    as SessionProgress?,
+        todos:
+            null == todos
+                ? _value._todos
+                : todos // ignore: cast_nullable_to_non_nullable
+                    as List<TodoItem>,
+        currentTask:
+            freezed == currentTask
+                ? _value.currentTask
+                : currentTask // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        startedAt:
+            null == startedAt
+                ? _value.startedAt
+                : startedAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime,
+        lastUpdatedAt:
+            null == lastUpdatedAt
+                ? _value.lastUpdatedAt
+                : lastUpdatedAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime,
+        endedAt:
+            freezed == endedAt
+                ? _value.endedAt
+                : endedAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
+        toolCallCount:
+            null == toolCallCount
+                ? _value.toolCallCount
+                : toolCallCount // ignore: cast_nullable_to_non_nullable
+                    as int,
       ),
     );
   }

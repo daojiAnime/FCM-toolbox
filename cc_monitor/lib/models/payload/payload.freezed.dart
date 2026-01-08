@@ -274,10 +274,11 @@ class _$PayloadCopyWithImpl<$Res, $Val extends Payload>
   $Res call({Object? title = null}) {
     return _then(
       _value.copyWith(
-            title: null == title
-                ? _value.title
-                : title // ignore: cast_nullable_to_non_nullable
-                      as String,
+            title:
+                null == title
+                    ? _value.title
+                    : title // ignore: cast_nullable_to_non_nullable
+                        as String,
           )
           as $Val,
     );
@@ -324,26 +325,31 @@ class __$$ProgressPayloadImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$ProgressPayloadImpl(
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
-                  as String,
-        description: freezed == description
-            ? _value.description
-            : description // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        current: null == current
-            ? _value.current
-            : current // ignore: cast_nullable_to_non_nullable
-                  as int,
-        total: null == total
-            ? _value.total
-            : total // ignore: cast_nullable_to_non_nullable
-                  as int,
-        currentStep: freezed == currentStep
-            ? _value.currentStep
-            : currentStep // ignore: cast_nullable_to_non_nullable
-                  as String?,
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        description:
+            freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        current:
+            null == current
+                ? _value.current
+                : current // ignore: cast_nullable_to_non_nullable
+                    as int,
+        total:
+            null == total
+                ? _value.total
+                : total // ignore: cast_nullable_to_non_nullable
+                    as int,
+        currentStep:
+            freezed == currentStep
+                ? _value.currentStep
+                : currentStep // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -705,22 +711,26 @@ class __$$CompletePayloadImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$CompletePayloadImpl(
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
-                  as String,
-        summary: freezed == summary
-            ? _value.summary
-            : summary // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        duration: freezed == duration
-            ? _value.duration
-            : duration // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        toolCount: freezed == toolCount
-            ? _value.toolCount
-            : toolCount // ignore: cast_nullable_to_non_nullable
-                  as int?,
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        summary:
+            freezed == summary
+                ? _value.summary
+                : summary // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        duration:
+            freezed == duration
+                ? _value.duration
+                : duration // ignore: cast_nullable_to_non_nullable
+                    as int?,
+        toolCount:
+            freezed == toolCount
+                ? _value.toolCount
+                : toolCount // ignore: cast_nullable_to_non_nullable
+                    as int?,
       ),
     );
   }
@@ -1079,22 +1089,26 @@ class __$$ErrorPayloadImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$ErrorPayloadImpl(
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
-                  as String,
-        message: null == message
-            ? _value.message
-            : message // ignore: cast_nullable_to_non_nullable
-                  as String,
-        stackTrace: freezed == stackTrace
-            ? _value.stackTrace
-            : stackTrace // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        suggestion: freezed == suggestion
-            ? _value.suggestion
-            : suggestion // ignore: cast_nullable_to_non_nullable
-                  as String?,
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        message:
+            null == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                    as String,
+        stackTrace:
+            freezed == stackTrace
+                ? _value.stackTrace
+                : stackTrace // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        suggestion:
+            freezed == suggestion
+                ? _value.suggestion
+                : suggestion // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -1444,18 +1458,21 @@ class __$$WarningPayloadImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$WarningPayloadImpl(
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
-                  as String,
-        message: null == message
-            ? _value.message
-            : message // ignore: cast_nullable_to_non_nullable
-                  as String,
-        action: freezed == action
-            ? _value.action
-            : action // ignore: cast_nullable_to_non_nullable
-                  as String?,
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        message:
+            null == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                    as String,
+        action:
+            freezed == action
+                ? _value.action
+                : action // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -1809,30 +1826,36 @@ class __$$CodePayloadImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$CodePayloadImpl(
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
-                  as String,
-        code: null == code
-            ? _value.code
-            : code // ignore: cast_nullable_to_non_nullable
-                  as String,
-        language: freezed == language
-            ? _value.language
-            : language // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        filename: freezed == filename
-            ? _value.filename
-            : filename // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        startLine: freezed == startLine
-            ? _value.startLine
-            : startLine // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        changes: freezed == changes
-            ? _value._changes
-            : changes // ignore: cast_nullable_to_non_nullable
-                  as List<CodeChange>?,
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        code:
+            null == code
+                ? _value.code
+                : code // ignore: cast_nullable_to_non_nullable
+                    as String,
+        language:
+            freezed == language
+                ? _value.language
+                : language // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        filename:
+            freezed == filename
+                ? _value.filename
+                : filename // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        startLine:
+            freezed == startLine
+                ? _value.startLine
+                : startLine // ignore: cast_nullable_to_non_nullable
+                    as int?,
+        changes:
+            freezed == changes
+                ? _value._changes
+                : changes // ignore: cast_nullable_to_non_nullable
+                    as List<CodeChange>?,
       ),
     );
   }
@@ -2206,14 +2229,16 @@ class __$$MarkdownPayloadImplCopyWithImpl<$Res>
   $Res call({Object? title = null, Object? content = null}) {
     return _then(
       _$MarkdownPayloadImpl(
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
-                  as String,
-        content: null == content
-            ? _value.content
-            : content // ignore: cast_nullable_to_non_nullable
-                  as String,
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        content:
+            null == content
+                ? _value.content
+                : content // ignore: cast_nullable_to_non_nullable
+                    as String,
       ),
     );
   }
@@ -2559,26 +2584,31 @@ class __$$ImagePayloadImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$ImagePayloadImpl(
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
-                  as String,
-        url: null == url
-            ? _value.url
-            : url // ignore: cast_nullable_to_non_nullable
-                  as String,
-        caption: freezed == caption
-            ? _value.caption
-            : caption // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        width: freezed == width
-            ? _value.width
-            : width // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        height: freezed == height
-            ? _value.height
-            : height // ignore: cast_nullable_to_non_nullable
-                  as int?,
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        url:
+            null == url
+                ? _value.url
+                : url // ignore: cast_nullable_to_non_nullable
+                    as String,
+        caption:
+            freezed == caption
+                ? _value.caption
+                : caption // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        width:
+            freezed == width
+                ? _value.width
+                : width // ignore: cast_nullable_to_non_nullable
+                    as int?,
+        height:
+            freezed == height
+                ? _value.height
+                : height // ignore: cast_nullable_to_non_nullable
+                    as int?,
       ),
     );
   }
@@ -2940,26 +2970,31 @@ class __$$InteractivePayloadImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$InteractivePayloadImpl(
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
-                  as String,
-        message: null == message
-            ? _value.message
-            : message // ignore: cast_nullable_to_non_nullable
-                  as String,
-        requestId: null == requestId
-            ? _value.requestId
-            : requestId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        interactiveType: null == interactiveType
-            ? _value.interactiveType
-            : interactiveType // ignore: cast_nullable_to_non_nullable
-                  as InteractiveType,
-        metadata: freezed == metadata
-            ? _value._metadata
-            : metadata // ignore: cast_nullable_to_non_nullable
-                  as Map<String, dynamic>?,
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        message:
+            null == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                    as String,
+        requestId:
+            null == requestId
+                ? _value.requestId
+                : requestId // ignore: cast_nullable_to_non_nullable
+                    as String,
+        interactiveType:
+            null == interactiveType
+                ? _value.interactiveType
+                : interactiveType // ignore: cast_nullable_to_non_nullable
+                    as InteractiveType,
+        metadata:
+            freezed == metadata
+                ? _value._metadata
+                : metadata // ignore: cast_nullable_to_non_nullable
+                    as Map<String, dynamic>?,
       ),
     );
   }
@@ -3357,18 +3392,21 @@ class _$CodeChangeCopyWithImpl<$Res, $Val extends CodeChange>
   }) {
     return _then(
       _value.copyWith(
-            line: null == line
-                ? _value.line
-                : line // ignore: cast_nullable_to_non_nullable
-                      as int,
-            changeType: null == changeType
-                ? _value.changeType
-                : changeType // ignore: cast_nullable_to_non_nullable
-                      as ChangeType,
-            content: null == content
-                ? _value.content
-                : content // ignore: cast_nullable_to_non_nullable
-                      as String,
+            line:
+                null == line
+                    ? _value.line
+                    : line // ignore: cast_nullable_to_non_nullable
+                        as int,
+            changeType:
+                null == changeType
+                    ? _value.changeType
+                    : changeType // ignore: cast_nullable_to_non_nullable
+                        as ChangeType,
+            content:
+                null == content
+                    ? _value.content
+                    : content // ignore: cast_nullable_to_non_nullable
+                        as String,
           )
           as $Val,
     );
@@ -3407,18 +3445,21 @@ class __$$CodeChangeImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$CodeChangeImpl(
-        line: null == line
-            ? _value.line
-            : line // ignore: cast_nullable_to_non_nullable
-                  as int,
-        changeType: null == changeType
-            ? _value.changeType
-            : changeType // ignore: cast_nullable_to_non_nullable
-                  as ChangeType,
-        content: null == content
-            ? _value.content
-            : content // ignore: cast_nullable_to_non_nullable
-                  as String,
+        line:
+            null == line
+                ? _value.line
+                : line // ignore: cast_nullable_to_non_nullable
+                    as int,
+        changeType:
+            null == changeType
+                ? _value.changeType
+                : changeType // ignore: cast_nullable_to_non_nullable
+                    as ChangeType,
+        content:
+            null == content
+                ? _value.content
+                : content // ignore: cast_nullable_to_non_nullable
+                    as String,
       ),
     );
   }

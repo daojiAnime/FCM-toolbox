@@ -16,12 +16,14 @@ _$CommandImpl _$$CommandImplFromJson(Map<String, dynamic> json) =>
           CommandStatus.pending,
       payload: json['payload'] as Map<String, dynamic>,
       createdAt: DateTime.parse(json['createdAt'] as String),
-      respondedAt: json['respondedAt'] == null
-          ? null
-          : DateTime.parse(json['respondedAt'] as String),
-      expiresAt: json['expiresAt'] == null
-          ? null
-          : DateTime.parse(json['expiresAt'] as String),
+      respondedAt:
+          json['respondedAt'] == null
+              ? null
+              : DateTime.parse(json['respondedAt'] as String),
+      expiresAt:
+          json['expiresAt'] == null
+              ? null
+              : DateTime.parse(json['expiresAt'] as String),
     );
 
 Map<String, dynamic> _$$CommandImplToJson(_$CommandImpl instance) =>
