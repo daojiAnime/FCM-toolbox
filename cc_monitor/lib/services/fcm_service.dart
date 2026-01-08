@@ -205,7 +205,13 @@ class FcmService {
           (e) => e.name == data['interactiveType'],
           orElse: () => InteractiveType.confirm,
         ),
-        metadata: data['metadata'],
+        // metadata 从 FCM 传来时是 JSON 字符串，需要解析
+        metadata: data['metadata'] != null
+            ? (data['metadata'] is String
+                  ? jsonDecode(data['metadata'] as String)
+                        as Map<String, dynamic>
+                  : data['metadata'] as Map<String, dynamic>)
+            : null,
       ),
       _ => Payload.progress(
         title: data['title'] ?? 'Message',
