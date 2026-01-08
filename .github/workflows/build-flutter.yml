@@ -25,7 +25,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Extract version from tag
+      - name: Extract and validate version
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -34,8 +34,49 @@ jobs:
             # 从 tag 提取版本号: cc-monitor-v1.0.1 -> 1.0.1
             VERSION="${GITHUB_REF#refs/tags/cc-monitor-v}"
           fi
+
+          # 验证语义化版本格式 (x.y.z)
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ 无效的版本号格式: $VERSION"
+            echo "   期望格式: x.y.z (例如 1.0.1)"
+            exit 1
+          fi
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "📦 Building version: $VERSION"
+          echo "📦 Version: $VERSION"
+
+      - name: Validate version is incremental
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # 获取所有 cc-monitor-v* 标签并排序
+          git fetch --tags --quiet
+          LATEST_TAG=$(git tag -l 'cc-monitor-v*' | grep -E '^cc-monitor-v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 2 | head -n 1)
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "✅ 首次发布，跳过版本比较"
+            exit 0
+          fi
+
+          LATEST_VERSION="${LATEST_TAG#cc-monitor-v}"
+          echo "📊 当前版本: $VERSION"
+          echo "📊 上一版本: $LATEST_VERSION"
+
+          # 比较版本号
+          version_gt() {
+            [ "$(printf '%s\n' "$1" "$2" | sort -V | tail -n 1)" = "$1" ] && [ "$1" != "$2" ]
+          }
+
+          if ! version_gt "$VERSION" "$LATEST_VERSION"; then
+            echo "❌ 版本号必须递增！"
+            echo "   当前标签: cc-monitor-v$VERSION"
+            echo "   上一版本: cc-monitor-v$LATEST_VERSION"
+            echo "   请使用更高的版本号"
+            exit 1
+          fi
+
+          echo "✅ 版本号校验通过: $LATEST_VERSION → $VERSION"
 
       - name: Update pubspec.yaml version
         run: |
