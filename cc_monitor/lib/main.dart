@@ -1,5 +1,8 @@
+import 'dart:io' show Platform;
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
@@ -9,18 +12,19 @@ import 'pages/message_detail_page.dart';
 import 'providers/settings_provider.dart';
 import 'providers/messages_provider.dart';
 import 'services/fcm_service.dart';
+import 'services/firestore_message_service.dart';
 
 /// 全局 ProviderContainer 引用，用于消息处理
 late ProviderContainer _container;
 
+/// 检查是否支持 Firebase 和 FCM（Android、iOS、macOS）
+bool get _isFirebaseSupported {
+  if (kIsWeb) return false;
+  return Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 初始化 Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // 注册后台消息处理器
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // 创建 ProviderContainer 以便初始化设置
   _container = ProviderContainer();
@@ -28,8 +32,29 @@ void main() async {
   // 初始化设置
   await _container.read(settingsProvider.notifier).init();
 
-  // 初始化 FCM 并获取 token
-  await _initializeFcm(_container);
+  // 在支持的平台初始化 Firebase 和 FCM（Android、iOS、macOS）
+  if (_isFirebaseSupported) {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      debugPrint('Firebase initialized successfully');
+
+      // 注册后台消息处理器（仅 Android/iOS 需要）
+      if (Platform.isAndroid || Platform.isIOS) {
+        FirebaseMessaging.onBackgroundMessage(
+          firebaseMessagingBackgroundHandler,
+        );
+      }
+
+      // 初始化 FCM 并获取 token
+      await _initializeFcm(_container);
+    } catch (e) {
+      debugPrint('Firebase initialization failed: $e');
+    }
+  } else {
+    debugPrint('Platform not supported for Firebase');
+  }
 
   runApp(
     UncontrolledProviderScope(
@@ -39,18 +64,26 @@ void main() async {
   );
 }
 
-/// 初始化 FCM 服务
+/// 初始化 FCM 服务，失败时切换到 Firestore 监听模式
 Future<void> _initializeFcm(ProviderContainer container) async {
   final settingsNotifier = container.read(settingsProvider.notifier);
-
-  // 请求通知权限
   final messaging = FirebaseMessaging.instance;
-  final settings = await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-    provisional: false,
-  );
+
+  // 请求通知权限（macOS 需要配置 APNs）
+  NotificationSettings settings;
+  try {
+    settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+  } catch (e) {
+    debugPrint('FCM permission request failed: $e');
+    debugPrint('Switching to Firestore realtime mode...');
+    await _initializeFirestoreMode(container);
+    return;
+  }
 
   if (settings.authorizationStatus == AuthorizationStatus.authorized ||
       settings.authorizationStatus == AuthorizationStatus.provisional) {
@@ -85,11 +118,22 @@ Future<void> _initializeFcm(ProviderContainer container) async {
     if (initialMessage != null) {
       _handleMessageOpenedApp(initialMessage);
     }
+
+    debugPrint('FCM initialized successfully');
   } else {
     debugPrint(
       'Notification permission denied: ${settings.authorizationStatus}',
     );
+    debugPrint('Switching to Firestore realtime mode...');
+    await _initializeFirestoreMode(container);
   }
+}
+
+/// 初始化 Firestore 实时监听模式
+Future<void> _initializeFirestoreMode(ProviderContainer container) async {
+  final firestoreService = container.read(firestoreMessageServiceProvider);
+  await firestoreService.initialize();
+  debugPrint('Firestore realtime mode enabled');
 }
 
 /// 处理前台消息

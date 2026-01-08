@@ -8,6 +8,7 @@ import '../models/session.dart';
 import '../providers/messages_provider.dart';
 import '../providers/session_provider.dart';
 import '../services/interaction_service.dart';
+import '../services/firestore_message_service.dart';
 import '../widgets/message_card/message_card.dart';
 import '../widgets/session_card.dart';
 import 'settings_page.dart';
@@ -29,11 +30,19 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final unreadCount = ref.watch(unreadCountProvider);
     final activeSessionCount = ref.watch(activeSessionCountProvider);
+    final messages = ref.watch(messagesProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('CC Monitor'),
         actions: [
+          // 清空消息按钮（仅在消息列表页且有消息时显示）
+          if (_selectedIndex == 0 && messages.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_outlined),
+              onPressed: () => _showClearMessagesDialog(context),
+              tooltip: '清空消息',
+            ),
           // 未读消息标记
           if (unreadCount > 0)
             Padding(
@@ -102,6 +111,37 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
+
+  /// 显示清空消息确认对话框
+  void _showClearMessagesDialog(BuildContext context) {
+    final messageCount = ref.read(messagesProvider).length;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.delete_sweep, color: MessageColors.error),
+        title: const Text('清空消息'),
+        content: Text('确定要删除全部 $messageCount 条消息吗？\n此操作无法撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              ref.read(messagesProvider.notifier).clearAll();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('消息已清空')));
+            },
+            style: FilledButton.styleFrom(backgroundColor: MessageColors.error),
+            child: const Text('清空'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// 消息列表标签页
@@ -118,7 +158,7 @@ class _MessagesTab extends ConsumerWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        // TODO: 从服务器刷新消息
+        await ref.read(firestoreMessageServiceProvider).refresh();
       },
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -184,8 +224,8 @@ class _MessagesTab extends ConsumerWidget {
       if (context.mounted) Navigator.pop(context);
 
       if (success) {
-        // 更新消息状态为已处理
-        // TODO: 更新消息的 pending 状态
+        // 更新消息状态为已处理（标记为已读）
+        ref.read(messagesProvider.notifier).markAsRead(message.id);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -295,7 +335,8 @@ class _SessionsTab extends ConsumerWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        // TODO: 从服务器刷新会话
+        // 使用 Firestore 实时订阅，手动刷新消息即可同步会话状态
+        await ref.read(firestoreMessageServiceProvider).refresh();
       },
       child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),

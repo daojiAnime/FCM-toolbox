@@ -40,10 +40,10 @@ class DefaultFirebaseOptions {
     storageBucket: 'ccpush-45c62.firebasestorage.app',
   );
 
-  // iOS 配置 - 需要时添加实际配置
+  // iOS 配置 - 从 GoogleService-Info.plist 提取
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
+    apiKey: 'AIzaSyBvqfGfR5BCwuyJU1qSx9s4J0B22X5QUjM',
+    appId: '1:507149970914:ios:a21cf6df2e7ab6c8df5dbb',
     messagingSenderId: '507149970914',
     projectId: 'ccpush-45c62',
     databaseURL: 'https://ccpush-45c62-default-rtdb.firebaseio.com',
@@ -51,14 +51,15 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.example.ccMonitor',
   );
 
-  // macOS 配置 - 与 Android 共享相同的 Firebase 项目
+  // macOS 配置 - 与 iOS 共享相同的 Firebase 配置
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCOxxzxhvhsVqqpAqO0GWvGPO2b_5RhPmo',
-    appId: '1:507149970914:android:2badc09fe6eea960df5dbb',
+    apiKey: 'AIzaSyBvqfGfR5BCwuyJU1qSx9s4J0B22X5QUjM',
+    appId: '1:507149970914:ios:a21cf6df2e7ab6c8df5dbb',
     messagingSenderId: '507149970914',
     projectId: 'ccpush-45c62',
     databaseURL: 'https://ccpush-45c62-default-rtdb.firebaseio.com',
     storageBucket: 'ccpush-45c62.firebasestorage.app',
+    iosBundleId: 'com.example.ccMonitor',
   );
 
   // Windows 配置 - 与 Android 共享相同的 Firebase 项目

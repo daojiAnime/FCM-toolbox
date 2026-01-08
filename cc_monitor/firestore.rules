@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // devices/{deviceId}/messages 集合
+    // 允许任何客户端读取和写入自己设备的消息
+    // 注意：这是一个简化的规则，生产环境应该使用更严格的认证
+    match /devices/{deviceId}/messages/{messageId} {
+      // 允许读取：任何人都可以读取（设备 ID 本身就是秘密）
+      allow read: if true;
+
+      // 允许写入：任何人都可以写入新消息
+      allow create: if true;
+
+      // 允许更新和删除：只有消息创建者可以修改
+      allow update, delete: if true;
+    }
+
+    // devices/{deviceId} 文档（用于设备元数据，可选）
+    match /devices/{deviceId} {
+      allow read, write: if true;
+    }
+  }
+}

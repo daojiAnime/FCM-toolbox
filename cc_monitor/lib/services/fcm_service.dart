@@ -48,9 +48,10 @@ class FcmService {
   }
 
   /// Token 刷新回调
+  /// 注意：Token 更新现在由 main.dart 中的 _initializeFcm 直接处理
+  /// 通过 settingsNotifier.setFcmToken(token) 更新状态
   void _onTokenRefresh(String token) {
-    // TODO: 更新 token provider
-    debugPrint('FCM Token: $token');
+    debugPrint('FCM Token refreshed: $token');
   }
 
   /// 获取当前 Token
@@ -222,9 +223,12 @@ class FcmService {
 }
 
 /// 后台消息处理器
+/// 注意：后台处理器在独立 isolate 中运行，无法访问 Riverpod 容器
+/// CC Monitor 使用 Firestore 实时订阅模式，消息已存储在云端
+/// 当 App 返回前台时，FirestoreMessageService 会自动同步最新消息
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // 后台消息处理
-  debugPrint('Handling a background message: ${message.messageId}');
-  // TODO: 保存到本地数据库
+  debugPrint('Background message received: ${message.messageId}');
+  // 后台消息由 Firestore 实时订阅处理，无需本地持久化
+  // 如需离线支持，可使用 SharedPreferences 队列消息 ID
 }

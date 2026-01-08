@@ -35,6 +35,16 @@ class MessagesNotifier extends StateNotifier<List<Message>> {
     state = state.where((msg) => msg.id != id).toList();
   }
 
+  /// 更新消息（用于交互消息状态更新）
+  void updateMessage(String id, Message Function(Message) update) {
+    state = state.map((msg) {
+      if (msg.id == id) {
+        return update(msg);
+      }
+      return msg;
+    }).toList();
+  }
+
   /// 清空所有消息
   void clearAll() {
     state = [];

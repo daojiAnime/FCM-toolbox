@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 /// 应用设置
 class AppSettings {
   const AppSettings({
+    required this.deviceId,
     this.fcmToken,
     this.themeMode = ThemeMode.system,
     this.enableNotifications = true,
@@ -14,6 +16,8 @@ class AppSettings {
     this.keepMessagesForDays = 7,
   });
 
+  /// 设备唯一标识符（用于 Firestore 消息路由）
+  final String deviceId;
   final String? fcmToken;
   final ThemeMode themeMode;
   final bool enableNotifications;
@@ -23,6 +27,7 @@ class AppSettings {
   final int keepMessagesForDays;
 
   AppSettings copyWith({
+    String? deviceId,
     String? fcmToken,
     ThemeMode? themeMode,
     bool? enableNotifications,
@@ -32,6 +37,7 @@ class AppSettings {
     int? keepMessagesForDays,
   }) {
     return AppSettings(
+      deviceId: deviceId ?? this.deviceId,
       fcmToken: fcmToken ?? this.fcmToken,
       themeMode: themeMode ?? this.themeMode,
       enableNotifications: enableNotifications ?? this.enableNotifications,
@@ -45,23 +51,32 @@ class AppSettings {
 
 /// 设置状态管理
 class SettingsNotifier extends StateNotifier<AppSettings> {
-  SettingsNotifier() : super(const AppSettings());
+  SettingsNotifier() : super(AppSettings(deviceId: const Uuid().v4()));
 
   SharedPreferences? _prefs;
+  static const _uuid = Uuid();
 
   /// 初始化设置
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
-    _loadSettings();
+    await _loadSettings();
   }
 
-  void _loadSettings() {
+  Future<void> _loadSettings() async {
     if (_prefs == null) return;
+
+    // 生成或加载 deviceId
+    var deviceId = _prefs!.getString('deviceId');
+    if (deviceId == null) {
+      deviceId = _uuid.v4();
+      await _prefs!.setString('deviceId', deviceId);
+    }
 
     final themeModeIndex = _prefs!.getInt('themeMode') ?? 0;
     final themeMode = ThemeMode.values[themeModeIndex];
 
     state = AppSettings(
+      deviceId: deviceId,
       fcmToken: _prefs!.getString('fcmToken'),
       themeMode: themeMode,
       enableNotifications: _prefs!.getBool('enableNotifications') ?? true,

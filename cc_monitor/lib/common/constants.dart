@@ -12,9 +12,18 @@ class AppConstants {
   static const Duration animationSlow = Duration(milliseconds: 500);
 
   // 卡片设计
-  static const double cardBorderRadius = 16.0;
-  static const double cardIndicatorWidth = 4.0;
-  static const double cardPadding = 16.0;
+  static const double cardBorderRadius = 14.0; // FlClash 风格
+  static const double cardPadding = 20.0; // 增加呼吸感
+
+  // 间距系统
+  static const double titleIconGap = 10.0; // 图标与标题间距
+  static const double contentGap = 6.0; // 内容行间距
+  static const double timestampTopGap = 12.0; // 时间戳上方间距
+
+  // 状态标签配置
+  static const double statusLabelPaddingH = 10.0;
+  static const double statusLabelPaddingV = 5.0;
+  static const double statusLabelBorderRadius = 12.0;
 
   // Firestore 集合名称
   static const String sessionsCollection = 'sessions';

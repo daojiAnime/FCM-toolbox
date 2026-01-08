@@ -6,6 +6,7 @@ import '../models/session.dart';
 import '../providers/session_provider.dart';
 import '../providers/messages_provider.dart';
 import '../widgets/message_card/message_card.dart';
+import 'message_detail_page.dart';
 
 /// 会话详情页面
 class SessionPage extends ConsumerWidget {
@@ -119,7 +120,13 @@ class SessionPage extends ConsumerWidget {
                 return MessageCard(
                   message: message,
                   onTap: () {
-                    // TODO: 导航到消息详情
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            MessageDetailPage(messageId: message.id),
+                      ),
+                    );
                   },
                 ).animate().fadeIn(
                   duration: const Duration(milliseconds: 300),

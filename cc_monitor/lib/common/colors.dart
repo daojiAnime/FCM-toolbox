@@ -18,10 +18,6 @@ class MessageColors {
   static const Color claudeOrange = Color(0xFFD97706);
   static const Color claudeBrown = Color(0xFFCC785C);
 
-  // 背景色
-  static const Color cardBackground = Color(0xFFF8FAFC);
-  static const Color cardBackgroundDark = Color(0xFF1E293B);
-
   /// 根据消息类型获取颜色
   static Color fromType(String type) {
     return switch (type.toLowerCase()) {
@@ -64,6 +60,21 @@ class MessageColors {
       'image' => '🖼️',
       'interactive' => '🎯',
       _ => '📄',
+    };
+  }
+
+  /// 根据消息类型获取状态标签文本
+  static String labelFromType(String type) {
+    return switch (type.toLowerCase()) {
+      'progress' => '进行中',
+      'complete' => '已完成',
+      'error' => '错误',
+      'warning' => '警告',
+      'code' => '代码',
+      'markdown' => '文档',
+      'image' => '图片',
+      'interactive' => '待响应',
+      _ => '消息',
     };
   }
 }

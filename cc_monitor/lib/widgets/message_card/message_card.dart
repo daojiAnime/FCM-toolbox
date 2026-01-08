@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/message.dart';
 import '../../models/payload/payload.dart';
 import 'base_card.dart';
@@ -90,7 +91,7 @@ class MessageCard extends StatelessWidget {
         subtitle: payload.caption,
         onTap: onTap,
         isRead: message.isRead,
-        // TODO: 添加图片预览
+        child: _buildImagePreview(payload),
       ),
       InteractivePayload payload => InteractiveMessageCard(
         title: payload.title,
@@ -105,6 +106,37 @@ class MessageCard extends StatelessWidget {
         isRead: message.isRead,
       ),
     };
+  }
+
+  /// 构建图片预览
+  Widget _buildImagePreview(ImagePayload payload) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxHeight: 150,
+          maxWidth: double.infinity,
+        ),
+        child: CachedNetworkImage(
+          imageUrl: payload.url,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            height: 100,
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            height: 100,
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: Icon(Icons.broken_image, size: 32, color: Colors.grey),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildSuggestion(BuildContext context, String suggestion) {

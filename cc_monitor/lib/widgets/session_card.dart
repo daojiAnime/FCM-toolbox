@@ -14,7 +14,6 @@ class SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     final statusColor = switch (session.status) {
       SessionStatus.running => MessageColors.progress,
@@ -30,9 +29,15 @@ class SessionCard extends StatelessWidget {
 
     return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          color: isDark
-              ? MessageColors.cardBackgroundDark
-              : MessageColors.cardBackground,
+          color: theme.colorScheme.surfaceContainerHigh,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+            side: BorderSide(
+              color: theme.colorScheme.outline.withValues(alpha: 0.06),
+              width: 1,
+            ),
+          ),
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
@@ -59,7 +64,7 @@ class SessionCard extends StatelessWidget {
                         child: Text(
                           session.projectName,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -67,19 +72,22 @@ class SessionCard extends StatelessWidget {
                       ),
                       // 状态标签
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppConstants.statusLabelPaddingH,
+                          vertical: AppConstants.statusLabelPaddingV,
                         ),
                         decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          color: statusColor.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.statusLabelBorderRadius,
+                          ),
                         ),
                         child: Text(
                           statusText,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: statusColor,
-                            fontWeight: FontWeight.w500,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: statusColor.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ),
@@ -107,7 +115,9 @@ class SessionCard extends StatelessWidget {
                             child: Text(
                               session.progress!.currentStep!,
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.outline,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.45,
+                                ),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -124,7 +134,7 @@ class SessionCard extends StatelessWidget {
                     ),
                   ],
                   // 底部信息
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppConstants.timestampTopGap),
                   Row(
                     children: [
                       // 工具调用次数
@@ -132,13 +142,17 @@ class SessionCard extends StatelessWidget {
                         Icon(
                           Icons.build_outlined,
                           size: 14,
-                          color: theme.colorScheme.outline,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.45,
+                          ),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${session.toolCallCount}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.45,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -147,13 +161,17 @@ class SessionCard extends StatelessWidget {
                       Icon(
                         Icons.timer_outlined,
                         size: 14,
-                        color: theme.colorScheme.outline,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.45,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _formatDuration(session.duration),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.outline,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.45,
+                          ),
                         ),
                       ),
                       const Spacer(),
@@ -161,7 +179,9 @@ class SessionCard extends StatelessWidget {
                       Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: theme.colorScheme.outline,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.45,
+                        ),
                       ),
                     ],
                   ),
@@ -171,12 +191,20 @@ class SessionCard extends StatelessWidget {
           ),
         )
         .animate()
-        .fadeIn(duration: AppConstants.animationNormal)
-        .slideX(
-          begin: 0.1,
-          end: 0,
-          duration: AppConstants.animationNormal,
+        .fadeIn(
+          duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutCubic,
+        )
+        .slideY(
+          begin: 0.05,
+          end: 0,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        )
+        .scale(
+          begin: const Offset(0.98, 0.98),
+          end: const Offset(1.0, 1.0),
+          duration: const Duration(milliseconds: 350),
         );
   }
 

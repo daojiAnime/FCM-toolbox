@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/settings_provider.dart';
+import 'debug_page.dart';
+
+const _kGitHubUrl = 'https://github.com/daojiAnime/FCM-toolbox';
 
 /// 设置页面
 class SettingsPage extends ConsumerWidget {
@@ -16,18 +20,37 @@ class SettingsPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('设置')),
       body: ListView(
         children: [
-          // FCM Token 部分
+          // 推送配置部分
           _buildSection(
             context,
             title: '推送配置',
             children: [
+              // Device ID（Firestore 模式）
+              ListTile(
+                leading: const Icon(Icons.devices),
+                title: const Text('Device ID'),
+                subtitle: Text(
+                  '${settings.deviceId.substring(0, 8)}...',
+                  style: theme.textTheme.bodySmall,
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.copy),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: settings.deviceId));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Device ID 已复制')),
+                    );
+                  },
+                ),
+              ),
+              // FCM Token
               ListTile(
                 leading: const Icon(Icons.key),
                 title: const Text('FCM Token'),
                 subtitle: Text(
                   settings.fcmToken != null
                       ? '${settings.fcmToken!.substring(0, 20)}...'
-                      : '未获取',
+                      : '未获取（需要 APNs 配置）',
                   style: theme.textTheme.bodySmall,
                 ),
                 trailing: settings.fcmToken != null
@@ -50,8 +73,7 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: const Text('扫描二维码配对 Claude Code'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  // TODO: 显示配对二维码
-                  _showPairingDialog(context, settings.fcmToken);
+                  _showPairingDialog(context, settings);
                 },
               ),
             ],
@@ -168,6 +190,26 @@ class SettingsPage extends ConsumerWidget {
             ],
           ),
 
+          // 开发调试
+          _buildSection(
+            context,
+            title: '开发调试',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.bug_report),
+                title: const Text('Firestore 调试'),
+                subtitle: const Text('测试实时消息接收'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DebugPage()),
+                  );
+                },
+              ),
+            ],
+          ),
+
           // 关于
           _buildSection(
             context,
@@ -182,8 +224,11 @@ class SettingsPage extends ConsumerWidget {
                 leading: const Icon(Icons.code),
                 title: const Text('GitHub'),
                 trailing: const Icon(Icons.open_in_new),
-                onTap: () {
-                  // TODO: 打开 GitHub 链接
+                onTap: () async {
+                  final uri = Uri.parse(_kGitHubUrl);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
                 },
               ),
             ],
@@ -219,43 +264,112 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  void _showPairingDialog(BuildContext context, String? token) {
+  void _showPairingDialog(BuildContext context, AppSettings settings) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('配对设备'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (token != null) ...[
+            // Device ID (Firestore 模式 - 始终可用)
+            const Text(
+              'Firestore 模式（推荐）:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      settings.deviceId,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 20),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: settings.deviceId));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Device ID 已复制')),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // FCM Token (如果可用)
+            if (settings.fcmToken != null) ...[
+              const Text(
+                'FCM 模式:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
               Container(
-                width: 200,
-                height: 200,
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.qr_code_2,
-                    size: 150,
-                    color: Colors.black54,
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${settings.fcmToken!.substring(0, 30)}...',
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy, size: 20),
+                      onPressed: () {
+                        Clipboard.setData(
+                          ClipboardData(text: settings.fcmToken!),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('FCM Token 已复制')),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                '在 Claude Code 配置中扫描此二维码',
-                textAlign: TextAlign.center,
-              ),
             ] else ...[
-              const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
-              const SizedBox(height: 16),
               const Text(
-                '尚未获取 FCM Token\n请确保已启用通知权限',
-                textAlign: TextAlign.center,
+                'FCM 模式:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '未配置（需要 APNs 证书）',
+                style: TextStyle(color: Colors.grey),
               ),
             ],
+
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            const Text(
+              '使用方法:\n'
+              '1. 复制 Device ID\n'
+              '2. 在 Claude Code Hook 配置中使用:\n'
+              '   --device-id <YOUR_DEVICE_ID>',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ],
         ),
         actions: [
@@ -263,16 +377,6 @@ class SettingsPage extends ConsumerWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text('关闭'),
           ),
-          if (token != null)
-            FilledButton(
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: token));
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Token 已复制')));
-              },
-              child: const Text('复制 Token'),
-            ),
         ],
       ),
     );

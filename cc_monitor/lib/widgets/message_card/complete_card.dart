@@ -42,11 +42,7 @@ class CompleteMessageCard extends StatelessWidget {
       subtitle: summary,
       onTap: onTap,
       isRead: isRead,
-      trailing: const Icon(
-        Icons.check_circle,
-        color: MessageColors.complete,
-        size: 20,
-      ),
+      // trailing 已移除：状态标签"已完成"已提供足够信息
       child: stats.isNotEmpty
           ? Wrap(
               spacing: 12,
