@@ -44,7 +44,7 @@ android {
     defaultConfig {
         applicationId = "io.github.daojianime.ccmonitor"
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23  // ota_update 插件要求最低 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
