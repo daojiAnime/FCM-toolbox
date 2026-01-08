@@ -114,12 +114,14 @@ class HapiConnectionState {
   HapiConnectionState copyWith({
     HapiConnectionStatus? status,
     String? errorMessage,
+    bool clearErrorMessage = false,
     DateTime? lastConnectedAt,
     int? reconnectAttempts,
   }) {
     return HapiConnectionState(
       status: status ?? this.status,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       lastConnectedAt: lastConnectedAt ?? this.lastConnectedAt,
       reconnectAttempts: reconnectAttempts ?? this.reconnectAttempts,
     );
@@ -135,6 +137,10 @@ class HapiSseService {
   http.Client? _client;
   StreamSubscription<String>? _subscription;
   Timer? _reconnectTimer;
+
+  // SSE 断线续传支持
+  String? _lastEventId;
+  Duration? _serverRetryDelay;
 
   // 事件流控制器
   final _eventController = StreamController<HapiSseEvent>.broadcast();
@@ -197,6 +203,11 @@ class HapiSseService {
       request.headers['Authorization'] = 'Bearer ${_config.apiToken}';
       request.headers['Accept'] = 'text/event-stream';
       request.headers['Cache-Control'] = 'no-cache';
+      // 断线续传：发送上次收到的事件 ID
+      if (_lastEventId != null) {
+        request.headers['Last-Event-ID'] = _lastEventId!;
+        debugPrint('[SSE] Resuming from event ID: $_lastEventId');
+      }
 
       final response = await _client!.send(request);
 
@@ -265,9 +276,17 @@ class HapiSseService {
       }
       _currentData.write(line.substring(5).trim());
     } else if (line.startsWith('id:')) {
-      // 可以记录 lastEventId 用于重连
+      // 记录 lastEventId 用于断线续传
+      _lastEventId = line.substring(3).trim();
     } else if (line.startsWith('retry:')) {
-      // 可以使用服务器建议的重连时间
+      // 使用服务器建议的重连时间
+      final retryMs = int.tryParse(line.substring(6).trim());
+      if (retryMs != null && retryMs > 0) {
+        _serverRetryDelay = Duration(milliseconds: retryMs);
+        debugPrint(
+          '[SSE] Server retry delay: ${_serverRetryDelay!.inMilliseconds}ms',
+        );
+      }
     } else if (line.startsWith(':')) {
       // 注释，忽略
     }
@@ -316,15 +335,21 @@ class HapiSseService {
       return;
     }
 
-    // 指数退避
-    final delay = Duration(
-      milliseconds: (_initialReconnectDelay.inMilliseconds *
-              (1 << _currentState.reconnectAttempts))
-          .clamp(
-            _initialReconnectDelay.inMilliseconds,
-            _maxReconnectDelay.inMilliseconds,
-          ),
-    );
+    // 优先使用服务器建议的重连时间，否则使用指数退避
+    final Duration delay;
+    if (_serverRetryDelay != null) {
+      delay = _serverRetryDelay!;
+    } else {
+      // 指数退避
+      delay = Duration(
+        milliseconds: (_initialReconnectDelay.inMilliseconds *
+                (1 << _currentState.reconnectAttempts))
+            .clamp(
+              _initialReconnectDelay.inMilliseconds,
+              _maxReconnectDelay.inMilliseconds,
+            ),
+      );
+    }
 
     debugPrint(
       '[SSE] Reconnecting in ${delay.inSeconds}s (attempt ${_currentState.reconnectAttempts + 1})',
@@ -369,6 +394,28 @@ class HapiSseService {
     await Future.delayed(const Duration(milliseconds: 100));
     await connect();
   }
+
+  /// 重置重连计数并立即重连
+  /// 用于用户手动触发重连（例如达到最大重连次数后）
+  Future<void> resetAndReconnect() async {
+    debugPrint('[SSE] Reset and reconnect requested');
+    disconnect();
+    // 清除 SSE 断线续传状态，从头开始
+    _lastEventId = null;
+    _serverRetryDelay = null;
+    _updateState(
+      const HapiConnectionState(
+        status: HapiConnectionStatus.disconnected,
+        reconnectAttempts: 0,
+      ),
+    );
+    await Future.delayed(const Duration(milliseconds: 100));
+    await connect();
+  }
+
+  /// 是否已达到最大重连次数
+  bool get hasReachedMaxReconnectAttempts =>
+      _currentState.reconnectAttempts >= _maxReconnectAttempts;
 
   /// 释放资源
   void dispose() {

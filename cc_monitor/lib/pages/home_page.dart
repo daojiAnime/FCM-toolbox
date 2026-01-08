@@ -7,16 +7,19 @@ import '../models/payload/payload.dart';
 import '../models/session.dart';
 import '../providers/messages_provider.dart';
 import '../providers/session_provider.dart';
+import '../providers/machines_provider.dart';
 import '../services/interaction_service.dart';
 import '../services/firestore_message_service.dart';
 import '../services/hapi/hapi_config_service.dart';
 import '../services/hapi/hapi_sse_service.dart';
+import '../services/connection_manager.dart';
 import '../widgets/message_card/message_card.dart';
 import '../widgets/session_card.dart';
 import 'settings_page.dart';
 import 'session_page.dart';
 import 'message_detail_page.dart';
 import 'hapi_settings_page.dart';
+import 'machines_page.dart';
 
 /// 首页 - 消息列表
 class HomePage extends ConsumerStatefulWidget {
@@ -34,6 +37,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     final unreadCount = ref.watch(unreadCountProvider);
     final activeSessionCount = ref.watch(activeSessionCountProvider);
     final messages = ref.watch(messagesProvider);
+    final hapiConfig = ref.watch(hapiConfigProvider);
+    final onlineMachineCount = ref.watch(onlineMachineCountProvider);
+    final showMachinesTab = hapiConfig.enabled && hapiConfig.isConfigured;
 
     return Scaffold(
       appBar: AppBar(
@@ -74,9 +80,22 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: const [_MessagesTab(), _SessionsTab()],
+      body: Column(
+        children: [
+          // 降级模式横幅
+          _FallbackBanner(),
+          // 主内容
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: [
+                const _MessagesTab(),
+                const _SessionsTab(),
+                if (showMachinesTab) const MachinesPage(),
+              ],
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -112,6 +131,21 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             label: '会话',
           ),
+          // 机器列表标签页（仅在 hapi 启用时显示）
+          if (showMachinesTab)
+            NavigationDestination(
+              icon: Badge(
+                isLabelVisible: onlineMachineCount > 0,
+                label: Text('$onlineMachineCount'),
+                child: const Icon(Icons.computer_outlined),
+              ),
+              selectedIcon: Badge(
+                isLabelVisible: onlineMachineCount > 0,
+                label: Text('$onlineMachineCount'),
+                child: const Icon(Icons.computer),
+              ),
+              label: '机器',
+            ),
         ],
       ),
     );
@@ -550,5 +584,147 @@ class _SessionsTab extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+/// 降级模式横幅
+class _FallbackBanner extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final connectionState = ref.watch(connectionManagerProvider);
+    final hapiConnectionState = ref.watch(hapiConnectionStateProvider);
+    final theme = Theme.of(context);
+
+    // 检查 SSE 是否达到最大重连次数
+    final sseMaxReconnectReached = hapiConnectionState.maybeWhen(
+      data:
+          (state) =>
+              state.status == HapiConnectionStatus.error &&
+              state.errorMessage?.contains('Max reconnect') == true,
+      orElse: () => false,
+    );
+
+    // 仅在降级模式下或 SSE 达到最大重连次数时显示
+    if (!connectionState.isFallbackMode && !sseMaxReconnectReached) {
+      return const SizedBox.shrink();
+    }
+
+    // 根据状态选择颜色
+    final isError =
+        sseMaxReconnectReached ||
+        connectionState.lastHapiError?.isNotEmpty == true;
+    final bannerColor = isError ? MessageColors.error : MessageColors.warning;
+
+    return Material(
+          color: bannerColor.withValues(alpha: 0.1),
+          child: SafeArea(
+            bottom: false,
+            child: InkWell(
+              onTap: () {
+                // 点击尝试重连 hapi
+                if (sseMaxReconnectReached) {
+                  // 重置并重连
+                  ref.read(hapiSseServiceProvider)?.resetAndReconnect();
+                } else {
+                  ref
+                      .read(connectionManagerProvider.notifier)
+                      .forceReconnectHapi();
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    // 状态图标
+                    Icon(
+                      sseMaxReconnectReached
+                          ? Icons.error_outline
+                          : connectionState.hapiReconnecting
+                          ? Icons.sync
+                          : Icons.cloud_off_outlined,
+                      size: 18,
+                      color: bannerColor,
+                    ),
+                    const SizedBox(width: 8),
+                    // 状态文字
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            sseMaxReconnectReached
+                                ? '连接失败，已达最大重试次数'
+                                : connectionState.hapiReconnecting
+                                ? '正在重连 hapi...'
+                                : 'hapi 已断开，使用 Firebase 模式',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: bannerColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (connectionState.fallbackReason != null &&
+                              !connectionState.hapiReconnecting)
+                            Text(
+                              connectionState.fallbackReason!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: bannerColor.withValues(alpha: 0.7),
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                    // 重连按钮
+                    if (!connectionState.hapiReconnecting)
+                      TextButton.icon(
+                        onPressed: () {
+                          if (sseMaxReconnectReached) {
+                            // 重置并重连
+                            ref
+                                .read(hapiSseServiceProvider)
+                                ?.resetAndReconnect();
+                          } else {
+                            ref
+                                .read(connectionManagerProvider.notifier)
+                                .forceReconnectHapi();
+                          }
+                        },
+                        icon: Icon(
+                          sseMaxReconnectReached
+                              ? Icons.restart_alt
+                              : Icons.refresh,
+                          size: 16,
+                        ),
+                        label: Text(sseMaxReconnectReached ? '重试' : '重连'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: bannerColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(bannerColor),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 200))
+        .slideY(begin: -1, end: 0, duration: const Duration(milliseconds: 200));
   }
 }
