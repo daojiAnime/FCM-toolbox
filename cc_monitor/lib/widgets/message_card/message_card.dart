@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/message.dart';
 import '../../models/payload/payload.dart';
+import '../chat/task_card.dart';
 import 'base_card.dart';
 import 'progress_card.dart';
 import 'complete_card.dart';
 import 'code_card.dart';
 import 'interactive_card.dart';
+import 'markdown_card.dart';
+import 'thinking_card.dart';
 
 /// 统一消息卡片工厂
 class MessageCard extends StatelessWidget {
@@ -30,6 +33,7 @@ class MessageCard extends StatelessWidget {
         title: payload.title,
         timestamp: message.createdAt,
         description: payload.description,
+        summary: _getToolSummary(payload.description, payload.currentStep),
         current: payload.current,
         total: payload.total,
         currentStep: payload.currentStep,
@@ -40,12 +44,13 @@ class MessageCard extends StatelessWidget {
         title: payload.title,
         timestamp: message.createdAt,
         summary: payload.summary,
+        executionSummary: _getToolSummary(payload.summary, null),
         duration: payload.duration,
         toolCount: payload.toolCount,
         onTap: onTap,
         isRead: message.isRead,
       ),
-      ErrorPayload payload => BaseMessageCard(
+      ErrorPayload payload => LegacyMessageCard(
         type: 'error',
         title: payload.title,
         timestamp: message.createdAt,
@@ -57,7 +62,7 @@ class MessageCard extends StatelessWidget {
                 ? _buildSuggestion(context, payload.suggestion!)
                 : null,
       ),
-      WarningPayload payload => BaseMessageCard(
+      WarningPayload payload => LegacyMessageCard(
         type: 'warning',
         title: payload.title,
         timestamp: message.createdAt,
@@ -75,18 +80,23 @@ class MessageCard extends StatelessWidget {
         onTap: onTap,
         isRead: message.isRead,
       ),
-      MarkdownPayload payload => BaseMessageCard(
-        type: 'markdown',
+      MarkdownPayload payload => MarkdownMessageCard(
         title: payload.title,
+        content: payload.content,
         timestamp: message.createdAt,
-        subtitle:
-            payload.content.length > 100
-                ? '${payload.content.substring(0, 100)}...'
-                : payload.content,
-        onTap: onTap,
+        messageId: payload.streamingId ?? message.id,
+        streamingStatus: payload.streamingStatus,
         isRead: message.isRead,
       ),
-      ImagePayload payload => BaseMessageCard(
+      // 思维链 - 可折叠显示 AI 推理过程
+      ThinkingPayload payload => ThinkingCard(
+        content: payload.content,
+        timestamp: message.createdAt,
+        messageId: payload.streamingId ?? message.id,
+        streamingStatus: payload.streamingStatus,
+        isRead: message.isRead,
+      ),
+      ImagePayload payload => LegacyMessageCard(
         type: 'image',
         title: payload.title,
         timestamp: message.createdAt,
@@ -99,6 +109,7 @@ class MessageCard extends StatelessWidget {
         title: payload.title,
         timestamp: message.createdAt,
         message: payload.message,
+        summary: _getInteractiveSummary(payload),
         requestId: payload.requestId,
         interactiveType: payload.interactiveType,
         metadata: payload.metadata,
@@ -107,6 +118,19 @@ class MessageCard extends StatelessWidget {
         onTap: onTap,
         isRead: message.isRead,
       ),
+      // 用户消息 - 简单文本显示
+      UserMessagePayload payload => LegacyMessageCard(
+        type: 'userMessage',
+        title: '用户消息',
+        timestamp: message.createdAt,
+        subtitle: payload.content,
+        onTap: onTap,
+        isRead: message.isRead,
+      ),
+      // 任务执行 - 使用折叠任务卡片
+      TaskExecutionPayload() => TaskCard(message: message),
+      // 隐藏消息 - 不渲染
+      HiddenPayload() => const SizedBox.shrink(),
     };
   }
 
@@ -170,5 +194,37 @@ class MessageCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// 获取工具执行摘要
+  String? _getToolSummary(String? description, String? currentStep) {
+    if (description != null && description.isNotEmpty) {
+      // 截取前 100 个字符
+      return description.length > 100
+          ? '${description.substring(0, 100)}...'
+          : description;
+    }
+    if (currentStep != null && currentStep.isNotEmpty) {
+      return currentStep.length > 100
+          ? '${currentStep.substring(0, 100)}...'
+          : currentStep;
+    }
+    return null;
+  }
+
+  /// 获取交互消息摘要
+  String? _getInteractiveSummary(InteractivePayload payload) {
+    if (payload.metadata != null) {
+      final metadata = payload.metadata!;
+      if (metadata.containsKey('command')) return metadata['command'] as String;
+      if (metadata.containsKey('args')) return metadata['args'].toString();
+      if (metadata.containsKey('path')) return metadata['path'] as String;
+    }
+    // 如果 message 比较短且包含路径或空格，可能包含命令信息
+    if (payload.message.length < 100 &&
+        (payload.message.contains('/') || payload.message.contains(' '))) {
+      return payload.message;
+    }
+    return null;
   }
 }

@@ -48,6 +48,24 @@ mixin _$Message {
   /// 创建时间
   DateTime get createdAt => throw _privateConstructorUsedError;
 
+  /// 消息角色 (user/assistant/system)
+  String get role => throw _privateConstructorUsedError;
+
+  /// 回复的消息 ID (用于引用)
+  String? get replyToId => throw _privateConstructorUsedError;
+
+  /// 父消息 ID (用于 Task 子任务折叠)
+  String? get parentId => throw _privateConstructorUsedError;
+
+  /// 内容 UUID (用于 hapi 消息追踪)
+  String? get contentUuid => throw _privateConstructorUsedError;
+
+  /// 是否为 sidechain 消息 (Task 子任务)
+  bool get isSidechain => throw _privateConstructorUsedError;
+
+  /// Task prompt (用于 sidechain root 匹配)
+  String? get taskPrompt => throw _privateConstructorUsedError;
+
   /// Serializes this Message to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -72,6 +90,12 @@ abstract class $MessageCopyWith<$Res> {
     String? toolName,
     bool isRead,
     DateTime createdAt,
+    String role,
+    String? replyToId,
+    String? parentId,
+    String? contentUuid,
+    bool isSidechain,
+    String? taskPrompt,
   });
 
   $PayloadCopyWith<$Res> get payload;
@@ -101,6 +125,12 @@ class _$MessageCopyWithImpl<$Res, $Val extends Message>
     Object? toolName = freezed,
     Object? isRead = null,
     Object? createdAt = null,
+    Object? role = null,
+    Object? replyToId = freezed,
+    Object? parentId = freezed,
+    Object? contentUuid = freezed,
+    Object? isSidechain = null,
+    Object? taskPrompt = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -149,6 +179,36 @@ class _$MessageCopyWithImpl<$Res, $Val extends Message>
                     ? _value.createdAt
                     : createdAt // ignore: cast_nullable_to_non_nullable
                         as DateTime,
+            role:
+                null == role
+                    ? _value.role
+                    : role // ignore: cast_nullable_to_non_nullable
+                        as String,
+            replyToId:
+                freezed == replyToId
+                    ? _value.replyToId
+                    : replyToId // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            parentId:
+                freezed == parentId
+                    ? _value.parentId
+                    : parentId // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            contentUuid:
+                freezed == contentUuid
+                    ? _value.contentUuid
+                    : contentUuid // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            isSidechain:
+                null == isSidechain
+                    ? _value.isSidechain
+                    : isSidechain // ignore: cast_nullable_to_non_nullable
+                        as bool,
+            taskPrompt:
+                freezed == taskPrompt
+                    ? _value.taskPrompt
+                    : taskPrompt // ignore: cast_nullable_to_non_nullable
+                        as String?,
           )
           as $Val,
     );
@@ -183,6 +243,12 @@ abstract class _$$MessageImplCopyWith<$Res> implements $MessageCopyWith<$Res> {
     String? toolName,
     bool isRead,
     DateTime createdAt,
+    String role,
+    String? replyToId,
+    String? parentId,
+    String? contentUuid,
+    bool isSidechain,
+    String? taskPrompt,
   });
 
   @override
@@ -212,6 +278,12 @@ class __$$MessageImplCopyWithImpl<$Res>
     Object? toolName = freezed,
     Object? isRead = null,
     Object? createdAt = null,
+    Object? role = null,
+    Object? replyToId = freezed,
+    Object? parentId = freezed,
+    Object? contentUuid = freezed,
+    Object? isSidechain = null,
+    Object? taskPrompt = freezed,
   }) {
     return _then(
       _$MessageImpl(
@@ -260,6 +332,36 @@ class __$$MessageImplCopyWithImpl<$Res>
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
                     as DateTime,
+        role:
+            null == role
+                ? _value.role
+                : role // ignore: cast_nullable_to_non_nullable
+                    as String,
+        replyToId:
+            freezed == replyToId
+                ? _value.replyToId
+                : replyToId // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        parentId:
+            freezed == parentId
+                ? _value.parentId
+                : parentId // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        contentUuid:
+            freezed == contentUuid
+                ? _value.contentUuid
+                : contentUuid // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        isSidechain:
+            null == isSidechain
+                ? _value.isSidechain
+                : isSidechain // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        taskPrompt:
+            freezed == taskPrompt
+                ? _value.taskPrompt
+                : taskPrompt // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -278,6 +380,12 @@ class _$MessageImpl extends _Message {
     this.toolName,
     this.isRead = false,
     required this.createdAt,
+    this.role = 'assistant',
+    this.replyToId,
+    this.parentId,
+    this.contentUuid,
+    this.isSidechain = false,
+    this.taskPrompt,
   }) : super._();
 
   factory _$MessageImpl.fromJson(Map<String, dynamic> json) =>
@@ -320,9 +428,35 @@ class _$MessageImpl extends _Message {
   @override
   final DateTime createdAt;
 
+  /// 消息角色 (user/assistant/system)
+  @override
+  @JsonKey()
+  final String role;
+
+  /// 回复的消息 ID (用于引用)
+  @override
+  final String? replyToId;
+
+  /// 父消息 ID (用于 Task 子任务折叠)
+  @override
+  final String? parentId;
+
+  /// 内容 UUID (用于 hapi 消息追踪)
+  @override
+  final String? contentUuid;
+
+  /// 是否为 sidechain 消息 (Task 子任务)
+  @override
+  @JsonKey()
+  final bool isSidechain;
+
+  /// Task prompt (用于 sidechain root 匹配)
+  @override
+  final String? taskPrompt;
+
   @override
   String toString() {
-    return 'Message(id: $id, sessionId: $sessionId, payload: $payload, projectName: $projectName, projectPath: $projectPath, hookEvent: $hookEvent, toolName: $toolName, isRead: $isRead, createdAt: $createdAt)';
+    return 'Message(id: $id, sessionId: $sessionId, payload: $payload, projectName: $projectName, projectPath: $projectPath, hookEvent: $hookEvent, toolName: $toolName, isRead: $isRead, createdAt: $createdAt, role: $role, replyToId: $replyToId, parentId: $parentId, contentUuid: $contentUuid, isSidechain: $isSidechain, taskPrompt: $taskPrompt)';
   }
 
   @override
@@ -344,7 +478,18 @@ class _$MessageImpl extends _Message {
                 other.toolName == toolName) &&
             (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt));
+                other.createdAt == createdAt) &&
+            (identical(other.role, role) || other.role == role) &&
+            (identical(other.replyToId, replyToId) ||
+                other.replyToId == replyToId) &&
+            (identical(other.parentId, parentId) ||
+                other.parentId == parentId) &&
+            (identical(other.contentUuid, contentUuid) ||
+                other.contentUuid == contentUuid) &&
+            (identical(other.isSidechain, isSidechain) ||
+                other.isSidechain == isSidechain) &&
+            (identical(other.taskPrompt, taskPrompt) ||
+                other.taskPrompt == taskPrompt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -360,6 +505,12 @@ class _$MessageImpl extends _Message {
     toolName,
     isRead,
     createdAt,
+    role,
+    replyToId,
+    parentId,
+    contentUuid,
+    isSidechain,
+    taskPrompt,
   );
 
   /// Create a copy of Message
@@ -387,6 +538,12 @@ abstract class _Message extends Message {
     final String? toolName,
     final bool isRead,
     required final DateTime createdAt,
+    final String role,
+    final String? replyToId,
+    final String? parentId,
+    final String? contentUuid,
+    final bool isSidechain,
+    final String? taskPrompt,
   }) = _$MessageImpl;
   const _Message._() : super._();
 
@@ -427,6 +584,30 @@ abstract class _Message extends Message {
   /// 创建时间
   @override
   DateTime get createdAt;
+
+  /// 消息角色 (user/assistant/system)
+  @override
+  String get role;
+
+  /// 回复的消息 ID (用于引用)
+  @override
+  String? get replyToId;
+
+  /// 父消息 ID (用于 Task 子任务折叠)
+  @override
+  String? get parentId;
+
+  /// 内容 UUID (用于 hapi 消息追踪)
+  @override
+  String? get contentUuid;
+
+  /// 是否为 sidechain 消息 (Task 子任务)
+  @override
+  bool get isSidechain;
+
+  /// Task prompt (用于 sidechain root 匹配)
+  @override
+  String? get taskPrompt;
 
   /// Create a copy of Message
   /// with the given fields replaced by the non-null parameter values.

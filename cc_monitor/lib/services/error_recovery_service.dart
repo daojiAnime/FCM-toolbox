@@ -1,6 +1,7 @@
+import '../common/logger.dart';
 import 'dart:async';
 import 'dart:math' show pow;
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 错误类型分类
@@ -215,20 +216,21 @@ class ErrorRecoveryService {
         return RetryResult.success(result, attempt);
       } catch (e) {
         lastError = e;
-        debugPrint(
+        Log.w(
+          'Retry',
           '[$operationName] Attempt $attempt failed: ${e.toString().split('\n').first}',
         );
 
         // 检查是否应该重试
         final recoverableError = _categorizeError(e);
         if (!recoverableError.canRetry) {
-          debugPrint('[$operationName] Error is not retryable');
+          Log.w('Retry', '[$operationName] Error is not retryable');
           return RetryResult.failure(recoverableError, attempt);
         }
 
         // 检查自定义重试条件
         if (config.retryIf != null && !config.retryIf!(e)) {
-          debugPrint('[$operationName] Custom retry condition not met');
+          Log.w('Retry', '[$operationName] Custom retry condition not met');
           return RetryResult.failure(recoverableError, attempt);
         }
 
@@ -236,7 +238,8 @@ class ErrorRecoveryService {
         if (attempt < config.maxAttempts) {
           final delay =
               recoverableError.retryDelay ?? config.delayForAttempt(attempt);
-          debugPrint(
+          Log.d(
+            'Retry',
             '[$operationName] Retrying in ${delay.inSeconds}s (attempt ${attempt + 1}/${config.maxAttempts})',
           );
 
@@ -248,7 +251,8 @@ class ErrorRecoveryService {
 
     // 所有重试都失败
     final finalError = _categorizeError(lastError!);
-    debugPrint(
+    Log.e(
+      'Retry',
       '[$operationName] All $attempt attempts failed: ${finalError.message}',
     );
     return RetryResult.failure(finalError, attempt);

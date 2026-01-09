@@ -17,6 +17,12 @@ _$MessageImpl _$$MessageImplFromJson(Map<String, dynamic> json) =>
       toolName: json['toolName'] as String?,
       isRead: json['isRead'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      role: json['role'] as String? ?? 'assistant',
+      replyToId: json['replyToId'] as String?,
+      parentId: json['parentId'] as String?,
+      contentUuid: json['contentUuid'] as String?,
+      isSidechain: json['isSidechain'] as bool? ?? false,
+      taskPrompt: json['taskPrompt'] as String?,
     );
 
 Map<String, dynamic> _$$MessageImplToJson(_$MessageImpl instance) =>
@@ -30,4 +36,10 @@ Map<String, dynamic> _$$MessageImplToJson(_$MessageImpl instance) =>
       'toolName': instance.toolName,
       'isRead': instance.isRead,
       'createdAt': instance.createdAt.toIso8601String(),
+      'role': instance.role,
+      'replyToId': instance.replyToId,
+      'parentId': instance.parentId,
+      'contentUuid': instance.contentUuid,
+      'isSidechain': instance.isSidechain,
+      'taskPrompt': instance.taskPrompt,
     };

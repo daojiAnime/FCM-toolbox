@@ -422,6 +422,204 @@ abstract class _TodoItem implements TodoItem {
       throw _privateConstructorUsedError;
 }
 
+AgentState _$AgentStateFromJson(Map<String, dynamic> json) {
+  return _AgentState.fromJson(json);
+}
+
+/// @nodoc
+mixin _$AgentState {
+  /// 是否由本地终端控制
+  bool get controlledByUser => throw _privateConstructorUsedError;
+
+  /// 待处理的权限请求 (key: requestId)
+  Map<String, dynamic> get requests => throw _privateConstructorUsedError;
+
+  /// Serializes this AgentState to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of AgentState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $AgentStateCopyWith<AgentState> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $AgentStateCopyWith<$Res> {
+  factory $AgentStateCopyWith(
+    AgentState value,
+    $Res Function(AgentState) then,
+  ) = _$AgentStateCopyWithImpl<$Res, AgentState>;
+  @useResult
+  $Res call({bool controlledByUser, Map<String, dynamic> requests});
+}
+
+/// @nodoc
+class _$AgentStateCopyWithImpl<$Res, $Val extends AgentState>
+    implements $AgentStateCopyWith<$Res> {
+  _$AgentStateCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of AgentState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? controlledByUser = null, Object? requests = null}) {
+    return _then(
+      _value.copyWith(
+            controlledByUser:
+                null == controlledByUser
+                    ? _value.controlledByUser
+                    : controlledByUser // ignore: cast_nullable_to_non_nullable
+                        as bool,
+            requests:
+                null == requests
+                    ? _value.requests
+                    : requests // ignore: cast_nullable_to_non_nullable
+                        as Map<String, dynamic>,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$AgentStateImplCopyWith<$Res>
+    implements $AgentStateCopyWith<$Res> {
+  factory _$$AgentStateImplCopyWith(
+    _$AgentStateImpl value,
+    $Res Function(_$AgentStateImpl) then,
+  ) = __$$AgentStateImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({bool controlledByUser, Map<String, dynamic> requests});
+}
+
+/// @nodoc
+class __$$AgentStateImplCopyWithImpl<$Res>
+    extends _$AgentStateCopyWithImpl<$Res, _$AgentStateImpl>
+    implements _$$AgentStateImplCopyWith<$Res> {
+  __$$AgentStateImplCopyWithImpl(
+    _$AgentStateImpl _value,
+    $Res Function(_$AgentStateImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of AgentState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? controlledByUser = null, Object? requests = null}) {
+    return _then(
+      _$AgentStateImpl(
+        controlledByUser:
+            null == controlledByUser
+                ? _value.controlledByUser
+                : controlledByUser // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        requests:
+            null == requests
+                ? _value._requests
+                : requests // ignore: cast_nullable_to_non_nullable
+                    as Map<String, dynamic>,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$AgentStateImpl implements _AgentState {
+  const _$AgentStateImpl({
+    this.controlledByUser = false,
+    final Map<String, dynamic> requests = const {},
+  }) : _requests = requests;
+
+  factory _$AgentStateImpl.fromJson(Map<String, dynamic> json) =>
+      _$$AgentStateImplFromJson(json);
+
+  /// 是否由本地终端控制
+  @override
+  @JsonKey()
+  final bool controlledByUser;
+
+  /// 待处理的权限请求 (key: requestId)
+  final Map<String, dynamic> _requests;
+
+  /// 待处理的权限请求 (key: requestId)
+  @override
+  @JsonKey()
+  Map<String, dynamic> get requests {
+    if (_requests is EqualUnmodifiableMapView) return _requests;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_requests);
+  }
+
+  @override
+  String toString() {
+    return 'AgentState(controlledByUser: $controlledByUser, requests: $requests)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$AgentStateImpl &&
+            (identical(other.controlledByUser, controlledByUser) ||
+                other.controlledByUser == controlledByUser) &&
+            const DeepCollectionEquality().equals(other._requests, _requests));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    controlledByUser,
+    const DeepCollectionEquality().hash(_requests),
+  );
+
+  /// Create a copy of AgentState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$AgentStateImplCopyWith<_$AgentStateImpl> get copyWith =>
+      __$$AgentStateImplCopyWithImpl<_$AgentStateImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$AgentStateImplToJson(this);
+  }
+}
+
+abstract class _AgentState implements AgentState {
+  const factory _AgentState({
+    final bool controlledByUser,
+    final Map<String, dynamic> requests,
+  }) = _$AgentStateImpl;
+
+  factory _AgentState.fromJson(Map<String, dynamic> json) =
+      _$AgentStateImpl.fromJson;
+
+  /// 是否由本地终端控制
+  @override
+  bool get controlledByUser;
+
+  /// 待处理的权限请求 (key: requestId)
+  @override
+  Map<String, dynamic> get requests;
+
+  /// Create a copy of AgentState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$AgentStateImplCopyWith<_$AgentStateImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 Session _$SessionFromJson(Map<String, dynamic> json) {
   return _Session.fromJson(json);
 }
@@ -461,6 +659,18 @@ mixin _$Session {
   /// 总工具调用次数
   int get toolCallCount => throw _privateConstructorUsedError;
 
+  /// Agent 状态
+  AgentState? get agentState => throw _privateConstructorUsedError;
+
+  /// 权限模式 (default, plan, acceptEdits, bypassPermissions)
+  String get permissionMode => throw _privateConstructorUsedError;
+
+  /// 模型模式 (default, sonnet, opus, haiku)
+  String get modelMode => throw _privateConstructorUsedError;
+
+  /// 上下文大小 (tokens)
+  int? get contextSize => throw _privateConstructorUsedError;
+
   /// Serializes this Session to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -487,9 +697,14 @@ abstract class $SessionCopyWith<$Res> {
     DateTime lastUpdatedAt,
     DateTime? endedAt,
     int toolCallCount,
+    AgentState? agentState,
+    String permissionMode,
+    String modelMode,
+    int? contextSize,
   });
 
   $SessionProgressCopyWith<$Res>? get progress;
+  $AgentStateCopyWith<$Res>? get agentState;
 }
 
 /// @nodoc
@@ -518,6 +733,10 @@ class _$SessionCopyWithImpl<$Res, $Val extends Session>
     Object? lastUpdatedAt = null,
     Object? endedAt = freezed,
     Object? toolCallCount = null,
+    Object? agentState = freezed,
+    Object? permissionMode = null,
+    Object? modelMode = null,
+    Object? contextSize = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -576,6 +795,26 @@ class _$SessionCopyWithImpl<$Res, $Val extends Session>
                     ? _value.toolCallCount
                     : toolCallCount // ignore: cast_nullable_to_non_nullable
                         as int,
+            agentState:
+                freezed == agentState
+                    ? _value.agentState
+                    : agentState // ignore: cast_nullable_to_non_nullable
+                        as AgentState?,
+            permissionMode:
+                null == permissionMode
+                    ? _value.permissionMode
+                    : permissionMode // ignore: cast_nullable_to_non_nullable
+                        as String,
+            modelMode:
+                null == modelMode
+                    ? _value.modelMode
+                    : modelMode // ignore: cast_nullable_to_non_nullable
+                        as String,
+            contextSize:
+                freezed == contextSize
+                    ? _value.contextSize
+                    : contextSize // ignore: cast_nullable_to_non_nullable
+                        as int?,
           )
           as $Val,
     );
@@ -592,6 +831,20 @@ class _$SessionCopyWithImpl<$Res, $Val extends Session>
 
     return $SessionProgressCopyWith<$Res>(_value.progress!, (value) {
       return _then(_value.copyWith(progress: value) as $Val);
+    });
+  }
+
+  /// Create a copy of Session
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $AgentStateCopyWith<$Res>? get agentState {
+    if (_value.agentState == null) {
+      return null;
+    }
+
+    return $AgentStateCopyWith<$Res>(_value.agentState!, (value) {
+      return _then(_value.copyWith(agentState: value) as $Val);
     });
   }
 }
@@ -616,10 +869,16 @@ abstract class _$$SessionImplCopyWith<$Res> implements $SessionCopyWith<$Res> {
     DateTime lastUpdatedAt,
     DateTime? endedAt,
     int toolCallCount,
+    AgentState? agentState,
+    String permissionMode,
+    String modelMode,
+    int? contextSize,
   });
 
   @override
   $SessionProgressCopyWith<$Res>? get progress;
+  @override
+  $AgentStateCopyWith<$Res>? get agentState;
 }
 
 /// @nodoc
@@ -647,6 +906,10 @@ class __$$SessionImplCopyWithImpl<$Res>
     Object? lastUpdatedAt = null,
     Object? endedAt = freezed,
     Object? toolCallCount = null,
+    Object? agentState = freezed,
+    Object? permissionMode = null,
+    Object? modelMode = null,
+    Object? contextSize = freezed,
   }) {
     return _then(
       _$SessionImpl(
@@ -705,6 +968,26 @@ class __$$SessionImplCopyWithImpl<$Res>
                 ? _value.toolCallCount
                 : toolCallCount // ignore: cast_nullable_to_non_nullable
                     as int,
+        agentState:
+            freezed == agentState
+                ? _value.agentState
+                : agentState // ignore: cast_nullable_to_non_nullable
+                    as AgentState?,
+        permissionMode:
+            null == permissionMode
+                ? _value.permissionMode
+                : permissionMode // ignore: cast_nullable_to_non_nullable
+                    as String,
+        modelMode:
+            null == modelMode
+                ? _value.modelMode
+                : modelMode // ignore: cast_nullable_to_non_nullable
+                    as String,
+        contextSize:
+            freezed == contextSize
+                ? _value.contextSize
+                : contextSize // ignore: cast_nullable_to_non_nullable
+                    as int?,
       ),
     );
   }
@@ -725,6 +1008,10 @@ class _$SessionImpl extends _Session {
     required this.lastUpdatedAt,
     this.endedAt,
     this.toolCallCount = 0,
+    this.agentState,
+    this.permissionMode = 'default',
+    this.modelMode = 'default',
+    this.contextSize,
   }) : _todos = todos,
        super._();
 
@@ -785,9 +1072,27 @@ class _$SessionImpl extends _Session {
   @JsonKey()
   final int toolCallCount;
 
+  /// Agent 状态
+  @override
+  final AgentState? agentState;
+
+  /// 权限模式 (default, plan, acceptEdits, bypassPermissions)
+  @override
+  @JsonKey()
+  final String permissionMode;
+
+  /// 模型模式 (default, sonnet, opus, haiku)
+  @override
+  @JsonKey()
+  final String modelMode;
+
+  /// 上下文大小 (tokens)
+  @override
+  final int? contextSize;
+
   @override
   String toString() {
-    return 'Session(id: $id, projectName: $projectName, projectPath: $projectPath, status: $status, progress: $progress, todos: $todos, currentTask: $currentTask, startedAt: $startedAt, lastUpdatedAt: $lastUpdatedAt, endedAt: $endedAt, toolCallCount: $toolCallCount)';
+    return 'Session(id: $id, projectName: $projectName, projectPath: $projectPath, status: $status, progress: $progress, todos: $todos, currentTask: $currentTask, startedAt: $startedAt, lastUpdatedAt: $lastUpdatedAt, endedAt: $endedAt, toolCallCount: $toolCallCount, agentState: $agentState, permissionMode: $permissionMode, modelMode: $modelMode, contextSize: $contextSize)';
   }
 
   @override
@@ -812,7 +1117,15 @@ class _$SessionImpl extends _Session {
                 other.lastUpdatedAt == lastUpdatedAt) &&
             (identical(other.endedAt, endedAt) || other.endedAt == endedAt) &&
             (identical(other.toolCallCount, toolCallCount) ||
-                other.toolCallCount == toolCallCount));
+                other.toolCallCount == toolCallCount) &&
+            (identical(other.agentState, agentState) ||
+                other.agentState == agentState) &&
+            (identical(other.permissionMode, permissionMode) ||
+                other.permissionMode == permissionMode) &&
+            (identical(other.modelMode, modelMode) ||
+                other.modelMode == modelMode) &&
+            (identical(other.contextSize, contextSize) ||
+                other.contextSize == contextSize));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -830,6 +1143,10 @@ class _$SessionImpl extends _Session {
     lastUpdatedAt,
     endedAt,
     toolCallCount,
+    agentState,
+    permissionMode,
+    modelMode,
+    contextSize,
   );
 
   /// Create a copy of Session
@@ -859,6 +1176,10 @@ abstract class _Session extends Session {
     required final DateTime lastUpdatedAt,
     final DateTime? endedAt,
     final int toolCallCount,
+    final AgentState? agentState,
+    final String permissionMode,
+    final String modelMode,
+    final int? contextSize,
   }) = _$SessionImpl;
   const _Session._() : super._();
 
@@ -907,6 +1228,22 @@ abstract class _Session extends Session {
   /// 总工具调用次数
   @override
   int get toolCallCount;
+
+  /// Agent 状态
+  @override
+  AgentState? get agentState;
+
+  /// 权限模式 (default, plan, acceptEdits, bypassPermissions)
+  @override
+  String get permissionMode;
+
+  /// 模型模式 (default, sonnet, opus, haiku)
+  @override
+  String get modelMode;
+
+  /// 上下文大小 (tokens)
+  @override
+  int? get contextSize;
 
   /// Create a copy of Session
   /// with the given fields replaced by the non-null parameter values.

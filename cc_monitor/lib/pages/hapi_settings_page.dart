@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/hapi/hapi_config_service.dart';
 import '../services/hapi/hapi_api_service.dart';
+import 'log_viewer_page.dart';
 
 /// hapi 设置页面
 class HapiSettingsPage extends ConsumerStatefulWidget {
@@ -444,6 +445,33 @@ class _HapiSettingsPageState extends ConsumerState<HapiSettingsPage> {
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // 高级选项
+              const Divider(),
+              const SizedBox(height: 16),
+              Text(
+                '高级选项',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 日志查看器
+              ListTile(
+                leading: const Icon(Icons.article_outlined),
+                title: const Text('日志查看器'),
+                subtitle: const Text('查看和导出应用日志'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LogViewerPage()),
+                  );
+                },
               ),
             ],
           ),

@@ -34,7 +34,7 @@ class CodeMessageCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return BaseMessageCard(
+    return LegacyMessageCard(
       type: AppConstants.messageCode,
       title: title,
       timestamp: timestamp,

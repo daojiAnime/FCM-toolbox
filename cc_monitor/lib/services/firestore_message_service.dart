@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../common/logger.dart';
 import '../models/message.dart';
 import '../models/payload/payload.dart';
 import '../providers/messages_provider.dart';
@@ -23,8 +23,17 @@ class FirestoreMessageService {
   StreamSubscription<QuerySnapshot>? _subscription;
   bool _isInitialized = false;
 
-  // 记录已处理的消息 ID，避免重复处理
+  // LRU 限制：最多保留 1000 条已处理的消息 ID
+  static const int _maxProcessedIds = 1000;
+
+  // 使用 LinkedHashSet 保持插入顺序，方便实现 FIFO 清理
   final Set<String> _processedMessageIds = {};
+
+  // 重连机制
+  int _reconnectAttempts = 0;
+  Timer? _reconnectTimer;
+  static const int _initialBackoffSeconds = 5;
+  static const int _maxBackoffSeconds = 60;
 
   FirestoreMessageService(this._ref);
 
@@ -42,13 +51,12 @@ class FirestoreMessageService {
   /// 初始化监听
   Future<void> initialize() async {
     if (_isInitialized) {
-      debugPrint('FirestoreMessageService: Already initialized');
+      Log.w('Firestore', 'Already initialized');
       return;
     }
 
     try {
-      debugPrint('FirestoreMessageService: Initializing...');
-      debugPrint('FirestoreMessageService: Collection path: $_collectionPath');
+      Log.i('Firestore', 'Initializing with collection: $_collectionPath');
 
       // 监听消息集合
       _subscription = _firestore
@@ -59,9 +67,10 @@ class FirestoreMessageService {
           .listen(_handleSnapshot, onError: _handleError);
 
       _isInitialized = true;
-      debugPrint('FirestoreMessageService: Listening for messages');
+      _reconnectAttempts = 0; // 重置重连计数
+      Log.i('Firestore', 'Listening for messages');
     } catch (e) {
-      debugPrint('FirestoreMessageService: Failed to initialize: $e');
+      Log.e('Firestore', 'Failed to initialize', e);
     }
   }
 
@@ -76,7 +85,8 @@ class FirestoreMessageService {
           continue;
         }
 
-        _processedMessageIds.add(docId);
+        // 添加新消息 ID，并实现 LRU 限制
+        _addProcessedMessageId(docId);
 
         final data = change.doc.data() as Map<String, dynamic>?;
         if (data != null) {
@@ -86,20 +96,27 @@ class FirestoreMessageService {
     }
   }
 
+  /// 添加已处理的消息 ID，并实现 FIFO 清理
+  void _addProcessedMessageId(String messageId) {
+    _processedMessageIds.add(messageId);
+
+    // 如果超过最大限制，移除最早的 ID
+    if (_processedMessageIds.length > _maxProcessedIds) {
+      final toRemove = _processedMessageIds.length - _maxProcessedIds;
+      final itemsToRemove = _processedMessageIds.take(toRemove).toList();
+      _processedMessageIds.removeAll(itemsToRemove);
+    }
+  }
+
   /// 处理新消息
   void _handleNewMessage(String docId, Map<String, dynamic> data) {
-    debugPrint('FirestoreMessageService: New message received: $docId');
-
     try {
       final message = _parseMessage(docId, data);
       if (message != null) {
         _ref.read(messagesProvider.notifier).addMessage(message);
-        debugPrint(
-          'FirestoreMessageService: Message added to list: ${message.id}',
-        );
       }
     } catch (e) {
-      debugPrint('FirestoreMessageService: Failed to parse message: $e');
+      Log.e('Firestore', 'Failed to parse message', e);
     }
   }
 
@@ -130,7 +147,7 @@ class FirestoreMessageService {
         payload: _parsePayload(type, data),
       );
     } catch (e) {
-      debugPrint('FirestoreMessageService: Parse error: $e');
+      Log.e('Firestore', 'Parse error', e);
       return null;
     }
   }
@@ -198,18 +215,53 @@ class FirestoreMessageService {
     };
   }
 
-  /// 处理错误
+  /// 处理错误并实现自动重连
   void _handleError(dynamic error) {
-    debugPrint('FirestoreMessageService: Stream error: $error');
+    Log.e('Firestore', 'Stream error', error);
+
+    // 标记为未初始化，以便重连
+    _isInitialized = false;
+
+    // 取消当前订阅
+    _subscription?.cancel();
+    _subscription = null;
+
+    // 安排重连
+    _scheduleReconnect();
+  }
+
+  /// 使用指数退避策略安排重连
+  void _scheduleReconnect() {
+    // 取消之前的重连计时器
+    _reconnectTimer?.cancel();
+
+    // 计算退避时间：min(初始时间 * 2^尝试次数, 最大时间)
+    final backoffSeconds = (_initialBackoffSeconds * (1 << _reconnectAttempts))
+        .clamp(0, _maxBackoffSeconds);
+
+    _reconnectAttempts++;
+
+    Log.i(
+      'Firestore',
+      'Reconnecting in ${backoffSeconds}s (attempt $_reconnectAttempts)',
+    );
+
+    _reconnectTimer = Timer(Duration(seconds: backoffSeconds), () {
+      Log.i('Firestore', 'Attempting to reconnect...');
+      initialize();
+    });
   }
 
   /// 停止监听
   void dispose() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     _subscription?.cancel();
     _subscription = null;
     _isInitialized = false;
+    _reconnectAttempts = 0;
     _processedMessageIds.clear();
-    debugPrint('FirestoreMessageService: Disposed');
+    Log.i('Firestore', 'Disposed');
   }
 
   /// 手动刷新消息
@@ -225,13 +277,13 @@ class FirestoreMessageService {
       for (var doc in snapshot.docs) {
         final docId = doc.id;
         if (!_processedMessageIds.contains(docId)) {
-          _processedMessageIds.add(docId);
+          _addProcessedMessageId(docId);
           final data = doc.data();
           _handleNewMessage(docId, data);
         }
       }
     } catch (e) {
-      debugPrint('FirestoreMessageService: Refresh failed: $e');
+      Log.e('Firestore', 'Refresh failed', e);
     }
   }
 

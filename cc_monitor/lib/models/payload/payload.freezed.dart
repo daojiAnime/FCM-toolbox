@@ -29,10 +29,18 @@ Payload _$PayloadFromJson(Map<String, dynamic> json) {
       return CodePayload.fromJson(json);
     case 'markdown':
       return MarkdownPayload.fromJson(json);
+    case 'thinking':
+      return ThinkingPayload.fromJson(json);
     case 'image':
       return ImagePayload.fromJson(json);
     case 'interactive':
       return InteractivePayload.fromJson(json);
+    case 'userMessage':
+      return UserMessagePayload.fromJson(json);
+    case 'taskExecution':
+      return TaskExecutionPayload.fromJson(json);
+    case 'hidden':
+      return HiddenPayload.fromJson(json);
 
     default:
       throw CheckedFromJsonException(
@@ -46,7 +54,6 @@ Payload _$PayloadFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Payload {
-  String get title => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(
@@ -80,9 +87,22 @@ mixin _$Payload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -96,9 +116,28 @@ mixin _$Payload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
@@ -132,9 +171,22 @@ mixin _$Payload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -148,9 +200,28 @@ mixin _$Payload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
@@ -184,9 +255,22 @@ mixin _$Payload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -200,9 +284,28 @@ mixin _$Payload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -213,8 +316,12 @@ mixin _$Payload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
@@ -224,8 +331,12 @@ mixin _$Payload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
@@ -235,26 +346,23 @@ mixin _$Payload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
 
   /// Serializes this Payload to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-
-  /// Create a copy of Payload
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  $PayloadCopyWith<Payload> get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
 abstract class $PayloadCopyWith<$Res> {
   factory $PayloadCopyWith(Payload value, $Res Function(Payload) then) =
       _$PayloadCopyWithImpl<$Res, Payload>;
-  @useResult
-  $Res call({String title});
 }
 
 /// @nodoc
@@ -269,30 +377,14 @@ class _$PayloadCopyWithImpl<$Res, $Val extends Payload>
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? title = null}) {
-    return _then(
-      _value.copyWith(
-            title:
-                null == title
-                    ? _value.title
-                    : title // ignore: cast_nullable_to_non_nullable
-                        as String,
-          )
-          as $Val,
-    );
-  }
 }
 
 /// @nodoc
-abstract class _$$ProgressPayloadImplCopyWith<$Res>
-    implements $PayloadCopyWith<$Res> {
+abstract class _$$ProgressPayloadImplCopyWith<$Res> {
   factory _$$ProgressPayloadImplCopyWith(
     _$ProgressPayloadImpl value,
     $Res Function(_$ProgressPayloadImpl) then,
   ) = __$$ProgressPayloadImplCopyWithImpl<$Res>;
-  @override
   @useResult
   $Res call({
     String title,
@@ -456,9 +548,22 @@ class _$ProgressPayloadImpl extends ProgressPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -472,9 +577,28 @@ class _$ProgressPayloadImpl extends ProgressPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) {
     return progress(title, description, current, total, currentStep);
   }
@@ -512,9 +636,22 @@ class _$ProgressPayloadImpl extends ProgressPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -528,9 +665,28 @@ class _$ProgressPayloadImpl extends ProgressPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) {
     return progress?.call(title, description, current, total, currentStep);
   }
@@ -568,9 +724,22 @@ class _$ProgressPayloadImpl extends ProgressPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -584,9 +753,28 @@ class _$ProgressPayloadImpl extends ProgressPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) {
     if (progress != null) {
@@ -604,8 +792,12 @@ class _$ProgressPayloadImpl extends ProgressPayload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) {
     return progress(this);
   }
@@ -619,8 +811,12 @@ class _$ProgressPayloadImpl extends ProgressPayload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) {
     return progress?.call(this);
   }
@@ -634,8 +830,12 @@ class _$ProgressPayloadImpl extends ProgressPayload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) {
     if (progress != null) {
@@ -663,7 +863,6 @@ abstract class ProgressPayload extends Payload {
   factory ProgressPayload.fromJson(Map<String, dynamic> json) =
       _$ProgressPayloadImpl.fromJson;
 
-  @override
   String get title;
   String? get description;
   int get current;
@@ -672,20 +871,17 @@ abstract class ProgressPayload extends Payload {
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ProgressPayloadImplCopyWith<_$ProgressPayloadImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$CompletePayloadImplCopyWith<$Res>
-    implements $PayloadCopyWith<$Res> {
+abstract class _$$CompletePayloadImplCopyWith<$Res> {
   factory _$$CompletePayloadImplCopyWith(
     _$CompletePayloadImpl value,
     $Res Function(_$CompletePayloadImpl) then,
   ) = __$$CompletePayloadImplCopyWithImpl<$Res>;
-  @override
   @useResult
   $Res call({String title, String? summary, int? duration, int? toolCount});
 }
@@ -831,9 +1027,22 @@ class _$CompletePayloadImpl extends CompletePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -847,9 +1056,28 @@ class _$CompletePayloadImpl extends CompletePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) {
     return complete(title, summary, duration, toolCount);
   }
@@ -887,9 +1115,22 @@ class _$CompletePayloadImpl extends CompletePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -903,9 +1144,28 @@ class _$CompletePayloadImpl extends CompletePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) {
     return complete?.call(title, summary, duration, toolCount);
   }
@@ -943,9 +1203,22 @@ class _$CompletePayloadImpl extends CompletePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -959,9 +1232,28 @@ class _$CompletePayloadImpl extends CompletePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) {
     if (complete != null) {
@@ -979,8 +1271,12 @@ class _$CompletePayloadImpl extends CompletePayload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) {
     return complete(this);
   }
@@ -994,8 +1290,12 @@ class _$CompletePayloadImpl extends CompletePayload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) {
     return complete?.call(this);
   }
@@ -1009,8 +1309,12 @@ class _$CompletePayloadImpl extends CompletePayload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) {
     if (complete != null) {
@@ -1037,7 +1341,6 @@ abstract class CompletePayload extends Payload {
   factory CompletePayload.fromJson(Map<String, dynamic> json) =
       _$CompletePayloadImpl.fromJson;
 
-  @override
   String get title;
   String? get summary;
   int? get duration;
@@ -1045,20 +1348,17 @@ abstract class CompletePayload extends Payload {
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CompletePayloadImplCopyWith<_$CompletePayloadImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$ErrorPayloadImplCopyWith<$Res>
-    implements $PayloadCopyWith<$Res> {
+abstract class _$$ErrorPayloadImplCopyWith<$Res> {
   factory _$$ErrorPayloadImplCopyWith(
     _$ErrorPayloadImpl value,
     $Res Function(_$ErrorPayloadImpl) then,
   ) = __$$ErrorPayloadImplCopyWithImpl<$Res>;
-  @override
   @useResult
   $Res call({
     String title,
@@ -1206,9 +1506,22 @@ class _$ErrorPayloadImpl extends ErrorPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -1222,9 +1535,28 @@ class _$ErrorPayloadImpl extends ErrorPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) {
     return error(title, message, stackTrace, suggestion);
   }
@@ -1262,9 +1594,22 @@ class _$ErrorPayloadImpl extends ErrorPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -1278,9 +1623,28 @@ class _$ErrorPayloadImpl extends ErrorPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) {
     return error?.call(title, message, stackTrace, suggestion);
   }
@@ -1318,9 +1682,22 @@ class _$ErrorPayloadImpl extends ErrorPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -1334,9 +1711,28 @@ class _$ErrorPayloadImpl extends ErrorPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) {
     if (error != null) {
@@ -1354,8 +1750,12 @@ class _$ErrorPayloadImpl extends ErrorPayload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) {
     return error(this);
   }
@@ -1369,8 +1769,12 @@ class _$ErrorPayloadImpl extends ErrorPayload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) {
     return error?.call(this);
   }
@@ -1384,8 +1788,12 @@ class _$ErrorPayloadImpl extends ErrorPayload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) {
     if (error != null) {
@@ -1412,7 +1820,6 @@ abstract class ErrorPayload extends Payload {
   factory ErrorPayload.fromJson(Map<String, dynamic> json) =
       _$ErrorPayloadImpl.fromJson;
 
-  @override
   String get title;
   String get message;
   String? get stackTrace;
@@ -1420,20 +1827,17 @@ abstract class ErrorPayload extends Payload {
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ErrorPayloadImplCopyWith<_$ErrorPayloadImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$WarningPayloadImplCopyWith<$Res>
-    implements $PayloadCopyWith<$Res> {
+abstract class _$$WarningPayloadImplCopyWith<$Res> {
   factory _$$WarningPayloadImplCopyWith(
     _$WarningPayloadImpl value,
     $Res Function(_$WarningPayloadImpl) then,
   ) = __$$WarningPayloadImplCopyWithImpl<$Res>;
-  @override
   @useResult
   $Res call({String title, String message, String? action});
 }
@@ -1566,9 +1970,22 @@ class _$WarningPayloadImpl extends WarningPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -1582,9 +1999,28 @@ class _$WarningPayloadImpl extends WarningPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) {
     return warning(title, message, action);
   }
@@ -1622,9 +2058,22 @@ class _$WarningPayloadImpl extends WarningPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -1638,9 +2087,28 @@ class _$WarningPayloadImpl extends WarningPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) {
     return warning?.call(title, message, action);
   }
@@ -1678,9 +2146,22 @@ class _$WarningPayloadImpl extends WarningPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -1694,9 +2175,28 @@ class _$WarningPayloadImpl extends WarningPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) {
     if (warning != null) {
@@ -1714,8 +2214,12 @@ class _$WarningPayloadImpl extends WarningPayload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) {
     return warning(this);
   }
@@ -1729,8 +2233,12 @@ class _$WarningPayloadImpl extends WarningPayload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) {
     return warning?.call(this);
   }
@@ -1744,8 +2252,12 @@ class _$WarningPayloadImpl extends WarningPayload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) {
     if (warning != null) {
@@ -1771,27 +2283,23 @@ abstract class WarningPayload extends Payload {
   factory WarningPayload.fromJson(Map<String, dynamic> json) =
       _$WarningPayloadImpl.fromJson;
 
-  @override
   String get title;
   String get message;
   String? get action;
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$WarningPayloadImplCopyWith<_$WarningPayloadImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$CodePayloadImplCopyWith<$Res>
-    implements $PayloadCopyWith<$Res> {
+abstract class _$$CodePayloadImplCopyWith<$Res> {
   factory _$$CodePayloadImplCopyWith(
     _$CodePayloadImpl value,
     $Res Function(_$CodePayloadImpl) then,
   ) = __$$CodePayloadImplCopyWithImpl<$Res>;
-  @override
   @useResult
   $Res call({
     String title,
@@ -1800,6 +2308,7 @@ abstract class _$$CodePayloadImplCopyWith<$Res>
     String? filename,
     int? startLine,
     List<CodeChange>? changes,
+    StreamingStatus streamingStatus,
   });
 }
 
@@ -1823,6 +2332,7 @@ class __$$CodePayloadImplCopyWithImpl<$Res>
     Object? filename = freezed,
     Object? startLine = freezed,
     Object? changes = freezed,
+    Object? streamingStatus = null,
   }) {
     return _then(
       _$CodePayloadImpl(
@@ -1856,6 +2366,11 @@ class __$$CodePayloadImplCopyWithImpl<$Res>
                 ? _value._changes
                 : changes // ignore: cast_nullable_to_non_nullable
                     as List<CodeChange>?,
+        streamingStatus:
+            null == streamingStatus
+                ? _value.streamingStatus
+                : streamingStatus // ignore: cast_nullable_to_non_nullable
+                    as StreamingStatus,
       ),
     );
   }
@@ -1871,6 +2386,7 @@ class _$CodePayloadImpl extends CodePayload {
     this.filename,
     this.startLine,
     final List<CodeChange>? changes,
+    this.streamingStatus = StreamingStatus.complete,
     final String? $type,
   }) : _changes = changes,
        $type = $type ?? 'code',
@@ -1899,12 +2415,16 @@ class _$CodePayloadImpl extends CodePayload {
     return EqualUnmodifiableListView(value);
   }
 
+  @override
+  @JsonKey()
+  final StreamingStatus streamingStatus;
+
   @JsonKey(name: 'runtimeType')
   final String $type;
 
   @override
   String toString() {
-    return 'Payload.code(title: $title, code: $code, language: $language, filename: $filename, startLine: $startLine, changes: $changes)';
+    return 'Payload.code(title: $title, code: $code, language: $language, filename: $filename, startLine: $startLine, changes: $changes, streamingStatus: $streamingStatus)';
   }
 
   @override
@@ -1920,7 +2440,9 @@ class _$CodePayloadImpl extends CodePayload {
                 other.filename == filename) &&
             (identical(other.startLine, startLine) ||
                 other.startLine == startLine) &&
-            const DeepCollectionEquality().equals(other._changes, _changes));
+            const DeepCollectionEquality().equals(other._changes, _changes) &&
+            (identical(other.streamingStatus, streamingStatus) ||
+                other.streamingStatus == streamingStatus));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1933,6 +2455,7 @@ class _$CodePayloadImpl extends CodePayload {
     filename,
     startLine,
     const DeepCollectionEquality().hash(_changes),
+    streamingStatus,
   );
 
   /// Create a copy of Payload
@@ -1977,9 +2500,22 @@ class _$CodePayloadImpl extends CodePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -1993,11 +2529,38 @@ class _$CodePayloadImpl extends CodePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) {
-    return code(title, this.code, language, filename, startLine, changes);
+    return code(
+      title,
+      this.code,
+      language,
+      filename,
+      startLine,
+      changes,
+      streamingStatus,
+    );
   }
 
   @override
@@ -2033,9 +2596,22 @@ class _$CodePayloadImpl extends CodePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -2049,11 +2625,38 @@ class _$CodePayloadImpl extends CodePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) {
-    return code?.call(title, this.code, language, filename, startLine, changes);
+    return code?.call(
+      title,
+      this.code,
+      language,
+      filename,
+      startLine,
+      changes,
+      streamingStatus,
+    );
   }
 
   @override
@@ -2089,9 +2692,22 @@ class _$CodePayloadImpl extends CodePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -2105,13 +2721,40 @@ class _$CodePayloadImpl extends CodePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) {
     if (code != null) {
-      return code(title, this.code, language, filename, startLine, changes);
+      return code(
+        title,
+        this.code,
+        language,
+        filename,
+        startLine,
+        changes,
+        streamingStatus,
+      );
     }
     return orElse();
   }
@@ -2125,8 +2768,12 @@ class _$CodePayloadImpl extends CodePayload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) {
     return code(this);
   }
@@ -2140,8 +2787,12 @@ class _$CodePayloadImpl extends CodePayload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) {
     return code?.call(this);
   }
@@ -2155,8 +2806,12 @@ class _$CodePayloadImpl extends CodePayload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) {
     if (code != null) {
@@ -2179,38 +2834,41 @@ abstract class CodePayload extends Payload {
     final String? filename,
     final int? startLine,
     final List<CodeChange>? changes,
+    final StreamingStatus streamingStatus,
   }) = _$CodePayloadImpl;
   const CodePayload._() : super._();
 
   factory CodePayload.fromJson(Map<String, dynamic> json) =
       _$CodePayloadImpl.fromJson;
 
-  @override
   String get title;
   String get code;
   String? get language;
   String? get filename;
   int? get startLine;
   List<CodeChange>? get changes;
+  StreamingStatus get streamingStatus;
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CodePayloadImplCopyWith<_$CodePayloadImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$MarkdownPayloadImplCopyWith<$Res>
-    implements $PayloadCopyWith<$Res> {
+abstract class _$$MarkdownPayloadImplCopyWith<$Res> {
   factory _$$MarkdownPayloadImplCopyWith(
     _$MarkdownPayloadImpl value,
     $Res Function(_$MarkdownPayloadImpl) then,
   ) = __$$MarkdownPayloadImplCopyWithImpl<$Res>;
-  @override
   @useResult
-  $Res call({String title, String content});
+  $Res call({
+    String title,
+    String content,
+    StreamingStatus streamingStatus,
+    String? streamingId,
+  });
 }
 
 /// @nodoc
@@ -2226,7 +2884,12 @@ class __$$MarkdownPayloadImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? title = null, Object? content = null}) {
+  $Res call({
+    Object? title = null,
+    Object? content = null,
+    Object? streamingStatus = null,
+    Object? streamingId = freezed,
+  }) {
     return _then(
       _$MarkdownPayloadImpl(
         title:
@@ -2239,6 +2902,16 @@ class __$$MarkdownPayloadImplCopyWithImpl<$Res>
                 ? _value.content
                 : content // ignore: cast_nullable_to_non_nullable
                     as String,
+        streamingStatus:
+            null == streamingStatus
+                ? _value.streamingStatus
+                : streamingStatus // ignore: cast_nullable_to_non_nullable
+                    as StreamingStatus,
+        streamingId:
+            freezed == streamingId
+                ? _value.streamingId
+                : streamingId // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -2250,6 +2923,8 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
   const _$MarkdownPayloadImpl({
     required this.title,
     required this.content,
+    this.streamingStatus = StreamingStatus.complete,
+    this.streamingId,
     final String? $type,
   }) : $type = $type ?? 'markdown',
        super._();
@@ -2261,13 +2936,18 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
   final String title;
   @override
   final String content;
+  @override
+  @JsonKey()
+  final StreamingStatus streamingStatus;
+  @override
+  final String? streamingId;
 
   @JsonKey(name: 'runtimeType')
   final String $type;
 
   @override
   String toString() {
-    return 'Payload.markdown(title: $title, content: $content)';
+    return 'Payload.markdown(title: $title, content: $content, streamingStatus: $streamingStatus, streamingId: $streamingId)';
   }
 
   @override
@@ -2276,12 +2956,17 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
         (other.runtimeType == runtimeType &&
             other is _$MarkdownPayloadImpl &&
             (identical(other.title, title) || other.title == title) &&
-            (identical(other.content, content) || other.content == content));
+            (identical(other.content, content) || other.content == content) &&
+            (identical(other.streamingStatus, streamingStatus) ||
+                other.streamingStatus == streamingStatus) &&
+            (identical(other.streamingId, streamingId) ||
+                other.streamingId == streamingId));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, title, content);
+  int get hashCode =>
+      Object.hash(runtimeType, title, content, streamingStatus, streamingId);
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
@@ -2328,9 +3013,22 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -2344,11 +3042,30 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) {
-    return markdown(title, content);
+    return markdown(title, content, streamingStatus, streamingId);
   }
 
   @override
@@ -2384,9 +3101,22 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -2400,11 +3130,30 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) {
-    return markdown?.call(title, content);
+    return markdown?.call(title, content, streamingStatus, streamingId);
   }
 
   @override
@@ -2440,9 +3189,22 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -2456,13 +3218,32 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) {
     if (markdown != null) {
-      return markdown(title, content);
+      return markdown(title, content, streamingStatus, streamingId);
     }
     return orElse();
   }
@@ -2476,8 +3257,12 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) {
     return markdown(this);
   }
@@ -2491,8 +3276,12 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) {
     return markdown?.call(this);
   }
@@ -2506,8 +3295,12 @@ class _$MarkdownPayloadImpl extends MarkdownPayload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) {
     if (markdown != null) {
@@ -2526,32 +3319,502 @@ abstract class MarkdownPayload extends Payload {
   const factory MarkdownPayload({
     required final String title,
     required final String content,
+    final StreamingStatus streamingStatus,
+    final String? streamingId,
   }) = _$MarkdownPayloadImpl;
   const MarkdownPayload._() : super._();
 
   factory MarkdownPayload.fromJson(Map<String, dynamic> json) =
       _$MarkdownPayloadImpl.fromJson;
 
-  @override
   String get title;
   String get content;
+  StreamingStatus get streamingStatus;
+  String? get streamingId;
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$MarkdownPayloadImplCopyWith<_$MarkdownPayloadImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$ImagePayloadImplCopyWith<$Res>
-    implements $PayloadCopyWith<$Res> {
+abstract class _$$ThinkingPayloadImplCopyWith<$Res> {
+  factory _$$ThinkingPayloadImplCopyWith(
+    _$ThinkingPayloadImpl value,
+    $Res Function(_$ThinkingPayloadImpl) then,
+  ) = __$$ThinkingPayloadImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({
+    String content,
+    StreamingStatus streamingStatus,
+    String? streamingId,
+  });
+}
+
+/// @nodoc
+class __$$ThinkingPayloadImplCopyWithImpl<$Res>
+    extends _$PayloadCopyWithImpl<$Res, _$ThinkingPayloadImpl>
+    implements _$$ThinkingPayloadImplCopyWith<$Res> {
+  __$$ThinkingPayloadImplCopyWithImpl(
+    _$ThinkingPayloadImpl _value,
+    $Res Function(_$ThinkingPayloadImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? content = null,
+    Object? streamingStatus = null,
+    Object? streamingId = freezed,
+  }) {
+    return _then(
+      _$ThinkingPayloadImpl(
+        content:
+            null == content
+                ? _value.content
+                : content // ignore: cast_nullable_to_non_nullable
+                    as String,
+        streamingStatus:
+            null == streamingStatus
+                ? _value.streamingStatus
+                : streamingStatus // ignore: cast_nullable_to_non_nullable
+                    as StreamingStatus,
+        streamingId:
+            freezed == streamingId
+                ? _value.streamingId
+                : streamingId // ignore: cast_nullable_to_non_nullable
+                    as String?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ThinkingPayloadImpl extends ThinkingPayload {
+  const _$ThinkingPayloadImpl({
+    required this.content,
+    this.streamingStatus = StreamingStatus.complete,
+    this.streamingId,
+    final String? $type,
+  }) : $type = $type ?? 'thinking',
+       super._();
+
+  factory _$ThinkingPayloadImpl.fromJson(Map<String, dynamic> json) =>
+      _$$ThinkingPayloadImplFromJson(json);
+
+  @override
+  final String content;
+  @override
+  @JsonKey()
+  final StreamingStatus streamingStatus;
+  @override
+  final String? streamingId;
+
+  @JsonKey(name: 'runtimeType')
+  final String $type;
+
+  @override
+  String toString() {
+    return 'Payload.thinking(content: $content, streamingStatus: $streamingStatus, streamingId: $streamingId)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ThinkingPayloadImpl &&
+            (identical(other.content, content) || other.content == content) &&
+            (identical(other.streamingStatus, streamingStatus) ||
+                other.streamingStatus == streamingStatus) &&
+            (identical(other.streamingId, streamingId) ||
+                other.streamingId == streamingId));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, content, streamingStatus, streamingId);
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ThinkingPayloadImplCopyWith<_$ThinkingPayloadImpl> get copyWith =>
+      __$$ThinkingPayloadImplCopyWithImpl<_$ThinkingPayloadImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )
+    progress,
+    required TResult Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )
+    complete,
+    required TResult Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )
+    error,
+    required TResult Function(String title, String message, String? action)
+    warning,
+    required TResult Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )
+    code,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
+    required TResult Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )
+    image,
+    required TResult Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )
+    interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
+  }) {
+    return thinking(content, streamingStatus, streamingId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )?
+    progress,
+    TResult? Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )?
+    complete,
+    TResult? Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )?
+    error,
+    TResult? Function(String title, String message, String? action)? warning,
+    TResult? Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )?
+    code,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
+    TResult? Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )?
+    image,
+    TResult? Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )?
+    interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
+  }) {
+    return thinking?.call(content, streamingStatus, streamingId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )?
+    progress,
+    TResult Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )?
+    complete,
+    TResult Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )?
+    error,
+    TResult Function(String title, String message, String? action)? warning,
+    TResult Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )?
+    code,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
+    TResult Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )?
+    image,
+    TResult Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )?
+    interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
+    required TResult orElse(),
+  }) {
+    if (thinking != null) {
+      return thinking(content, streamingStatus, streamingId);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(ProgressPayload value) progress,
+    required TResult Function(CompletePayload value) complete,
+    required TResult Function(ErrorPayload value) error,
+    required TResult Function(WarningPayload value) warning,
+    required TResult Function(CodePayload value) code,
+    required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
+    required TResult Function(ImagePayload value) image,
+    required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
+  }) {
+    return thinking(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(ProgressPayload value)? progress,
+    TResult? Function(CompletePayload value)? complete,
+    TResult? Function(ErrorPayload value)? error,
+    TResult? Function(WarningPayload value)? warning,
+    TResult? Function(CodePayload value)? code,
+    TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
+    TResult? Function(ImagePayload value)? image,
+    TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
+  }) {
+    return thinking?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(ProgressPayload value)? progress,
+    TResult Function(CompletePayload value)? complete,
+    TResult Function(ErrorPayload value)? error,
+    TResult Function(WarningPayload value)? warning,
+    TResult Function(CodePayload value)? code,
+    TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
+    TResult Function(ImagePayload value)? image,
+    TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
+    required TResult orElse(),
+  }) {
+    if (thinking != null) {
+      return thinking(this);
+    }
+    return orElse();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ThinkingPayloadImplToJson(this);
+  }
+}
+
+abstract class ThinkingPayload extends Payload {
+  const factory ThinkingPayload({
+    required final String content,
+    final StreamingStatus streamingStatus,
+    final String? streamingId,
+  }) = _$ThinkingPayloadImpl;
+  const ThinkingPayload._() : super._();
+
+  factory ThinkingPayload.fromJson(Map<String, dynamic> json) =
+      _$ThinkingPayloadImpl.fromJson;
+
+  String get content;
+  StreamingStatus get streamingStatus;
+  String? get streamingId;
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ThinkingPayloadImplCopyWith<_$ThinkingPayloadImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$ImagePayloadImplCopyWith<$Res> {
   factory _$$ImagePayloadImplCopyWith(
     _$ImagePayloadImpl value,
     $Res Function(_$ImagePayloadImpl) then,
   ) = __$$ImagePayloadImplCopyWithImpl<$Res>;
-  @override
   @useResult
   $Res call({
     String title,
@@ -2708,9 +3971,22 @@ class _$ImagePayloadImpl extends ImagePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -2724,9 +4000,28 @@ class _$ImagePayloadImpl extends ImagePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) {
     return image(title, url, caption, width, height);
   }
@@ -2764,9 +4059,22 @@ class _$ImagePayloadImpl extends ImagePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -2780,9 +4088,28 @@ class _$ImagePayloadImpl extends ImagePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) {
     return image?.call(title, url, caption, width, height);
   }
@@ -2820,9 +4147,22 @@ class _$ImagePayloadImpl extends ImagePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -2836,9 +4176,28 @@ class _$ImagePayloadImpl extends ImagePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) {
     if (image != null) {
@@ -2856,8 +4215,12 @@ class _$ImagePayloadImpl extends ImagePayload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) {
     return image(this);
   }
@@ -2871,8 +4234,12 @@ class _$ImagePayloadImpl extends ImagePayload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) {
     return image?.call(this);
   }
@@ -2886,8 +4253,12 @@ class _$ImagePayloadImpl extends ImagePayload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) {
     if (image != null) {
@@ -2915,7 +4286,6 @@ abstract class ImagePayload extends Payload {
   factory ImagePayload.fromJson(Map<String, dynamic> json) =
       _$ImagePayloadImpl.fromJson;
 
-  @override
   String get title;
   String get url;
   String? get caption;
@@ -2924,26 +4294,24 @@ abstract class ImagePayload extends Payload {
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ImagePayloadImplCopyWith<_$ImagePayloadImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$InteractivePayloadImplCopyWith<$Res>
-    implements $PayloadCopyWith<$Res> {
+abstract class _$$InteractivePayloadImplCopyWith<$Res> {
   factory _$$InteractivePayloadImplCopyWith(
     _$InteractivePayloadImpl value,
     $Res Function(_$InteractivePayloadImpl) then,
   ) = __$$InteractivePayloadImplCopyWithImpl<$Res>;
-  @override
   @useResult
   $Res call({
     String title,
     String message,
     String requestId,
     InteractiveType interactiveType,
+    PermissionStatus status,
     Map<String, dynamic>? metadata,
   });
 }
@@ -2966,6 +4334,7 @@ class __$$InteractivePayloadImplCopyWithImpl<$Res>
     Object? message = null,
     Object? requestId = null,
     Object? interactiveType = null,
+    Object? status = null,
     Object? metadata = freezed,
   }) {
     return _then(
@@ -2990,6 +4359,11 @@ class __$$InteractivePayloadImplCopyWithImpl<$Res>
                 ? _value.interactiveType
                 : interactiveType // ignore: cast_nullable_to_non_nullable
                     as InteractiveType,
+        status:
+            null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                    as PermissionStatus,
         metadata:
             freezed == metadata
                 ? _value._metadata
@@ -3008,6 +4382,7 @@ class _$InteractivePayloadImpl extends InteractivePayload {
     required this.message,
     required this.requestId,
     required this.interactiveType,
+    this.status = PermissionStatus.pending,
     final Map<String, dynamic>? metadata,
     final String? $type,
   }) : _metadata = metadata,
@@ -3025,6 +4400,11 @@ class _$InteractivePayloadImpl extends InteractivePayload {
   final String requestId;
   @override
   final InteractiveType interactiveType;
+
+  /// 权限状态 (pending/approved/denied/canceled)
+  @override
+  @JsonKey()
+  final PermissionStatus status;
   final Map<String, dynamic>? _metadata;
   @override
   Map<String, dynamic>? get metadata {
@@ -3040,7 +4420,7 @@ class _$InteractivePayloadImpl extends InteractivePayload {
 
   @override
   String toString() {
-    return 'Payload.interactive(title: $title, message: $message, requestId: $requestId, interactiveType: $interactiveType, metadata: $metadata)';
+    return 'Payload.interactive(title: $title, message: $message, requestId: $requestId, interactiveType: $interactiveType, status: $status, metadata: $metadata)';
   }
 
   @override
@@ -3054,6 +4434,7 @@ class _$InteractivePayloadImpl extends InteractivePayload {
                 other.requestId == requestId) &&
             (identical(other.interactiveType, interactiveType) ||
                 other.interactiveType == interactiveType) &&
+            (identical(other.status, status) || other.status == status) &&
             const DeepCollectionEquality().equals(other._metadata, _metadata));
   }
 
@@ -3065,6 +4446,7 @@ class _$InteractivePayloadImpl extends InteractivePayload {
     message,
     requestId,
     interactiveType,
+    status,
     const DeepCollectionEquality().hash(_metadata),
   );
 
@@ -3113,9 +4495,22 @@ class _$InteractivePayloadImpl extends InteractivePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )
     code,
-    required TResult Function(String title, String content) markdown,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
     required TResult Function(
       String title,
       String url,
@@ -3129,11 +4524,37 @@ class _$InteractivePayloadImpl extends InteractivePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )
     interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
   }) {
-    return interactive(title, message, requestId, interactiveType, metadata);
+    return interactive(
+      title,
+      message,
+      requestId,
+      interactiveType,
+      status,
+      metadata,
+    );
   }
 
   @override
@@ -3169,9 +4590,22 @@ class _$InteractivePayloadImpl extends InteractivePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult? Function(String title, String content)? markdown,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult? Function(
       String title,
       String url,
@@ -3185,15 +4619,35 @@ class _$InteractivePayloadImpl extends InteractivePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
   }) {
     return interactive?.call(
       title,
       message,
       requestId,
       interactiveType,
+      status,
       metadata,
     );
   }
@@ -3231,9 +4685,22 @@ class _$InteractivePayloadImpl extends InteractivePayload {
       String? filename,
       int? startLine,
       List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
     )?
     code,
-    TResult Function(String title, String content)? markdown,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
     TResult Function(
       String title,
       String url,
@@ -3247,13 +4714,39 @@ class _$InteractivePayloadImpl extends InteractivePayload {
       String message,
       String requestId,
       InteractiveType interactiveType,
+      PermissionStatus status,
       Map<String, dynamic>? metadata,
     )?
     interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
     required TResult orElse(),
   }) {
     if (interactive != null) {
-      return interactive(title, message, requestId, interactiveType, metadata);
+      return interactive(
+        title,
+        message,
+        requestId,
+        interactiveType,
+        status,
+        metadata,
+      );
     }
     return orElse();
   }
@@ -3267,8 +4760,12 @@ class _$InteractivePayloadImpl extends InteractivePayload {
     required TResult Function(WarningPayload value) warning,
     required TResult Function(CodePayload value) code,
     required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
     required TResult Function(ImagePayload value) image,
     required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
   }) {
     return interactive(this);
   }
@@ -3282,8 +4779,12 @@ class _$InteractivePayloadImpl extends InteractivePayload {
     TResult? Function(WarningPayload value)? warning,
     TResult? Function(CodePayload value)? code,
     TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
     TResult? Function(ImagePayload value)? image,
     TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
   }) {
     return interactive?.call(this);
   }
@@ -3297,8 +4798,12 @@ class _$InteractivePayloadImpl extends InteractivePayload {
     TResult Function(WarningPayload value)? warning,
     TResult Function(CodePayload value)? code,
     TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
     TResult Function(ImagePayload value)? image,
     TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
     required TResult orElse(),
   }) {
     if (interactive != null) {
@@ -3319,6 +4824,7 @@ abstract class InteractivePayload extends Payload {
     required final String message,
     required final String requestId,
     required final InteractiveType interactiveType,
+    final PermissionStatus status,
     final Map<String, dynamic>? metadata,
   }) = _$InteractivePayloadImpl;
   const InteractivePayload._() : super._();
@@ -3326,18 +4832,1512 @@ abstract class InteractivePayload extends Payload {
   factory InteractivePayload.fromJson(Map<String, dynamic> json) =
       _$InteractivePayloadImpl.fromJson;
 
-  @override
   String get title;
   String get message;
   String get requestId;
   InteractiveType get interactiveType;
+
+  /// 权限状态 (pending/approved/denied/canceled)
+  PermissionStatus get status;
   Map<String, dynamic>? get metadata;
 
   /// Create a copy of Payload
   /// with the given fields replaced by the non-null parameter values.
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$InteractivePayloadImplCopyWith<_$InteractivePayloadImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$UserMessagePayloadImplCopyWith<$Res> {
+  factory _$$UserMessagePayloadImplCopyWith(
+    _$UserMessagePayloadImpl value,
+    $Res Function(_$UserMessagePayloadImpl) then,
+  ) = __$$UserMessagePayloadImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({
+    String content,
+    bool isPending,
+    bool isFailed,
+    String? failureReason,
+  });
+}
+
+/// @nodoc
+class __$$UserMessagePayloadImplCopyWithImpl<$Res>
+    extends _$PayloadCopyWithImpl<$Res, _$UserMessagePayloadImpl>
+    implements _$$UserMessagePayloadImplCopyWith<$Res> {
+  __$$UserMessagePayloadImplCopyWithImpl(
+    _$UserMessagePayloadImpl _value,
+    $Res Function(_$UserMessagePayloadImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? content = null,
+    Object? isPending = null,
+    Object? isFailed = null,
+    Object? failureReason = freezed,
+  }) {
+    return _then(
+      _$UserMessagePayloadImpl(
+        content:
+            null == content
+                ? _value.content
+                : content // ignore: cast_nullable_to_non_nullable
+                    as String,
+        isPending:
+            null == isPending
+                ? _value.isPending
+                : isPending // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        isFailed:
+            null == isFailed
+                ? _value.isFailed
+                : isFailed // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        failureReason:
+            freezed == failureReason
+                ? _value.failureReason
+                : failureReason // ignore: cast_nullable_to_non_nullable
+                    as String?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$UserMessagePayloadImpl extends UserMessagePayload {
+  const _$UserMessagePayloadImpl({
+    required this.content,
+    this.isPending = false,
+    this.isFailed = false,
+    this.failureReason,
+    final String? $type,
+  }) : $type = $type ?? 'userMessage',
+       super._();
+
+  factory _$UserMessagePayloadImpl.fromJson(Map<String, dynamic> json) =>
+      _$$UserMessagePayloadImplFromJson(json);
+
+  @override
+  final String content;
+  @override
+  @JsonKey()
+  final bool isPending;
+  @override
+  @JsonKey()
+  final bool isFailed;
+  @override
+  final String? failureReason;
+
+  @JsonKey(name: 'runtimeType')
+  final String $type;
+
+  @override
+  String toString() {
+    return 'Payload.userMessage(content: $content, isPending: $isPending, isFailed: $isFailed, failureReason: $failureReason)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$UserMessagePayloadImpl &&
+            (identical(other.content, content) || other.content == content) &&
+            (identical(other.isPending, isPending) ||
+                other.isPending == isPending) &&
+            (identical(other.isFailed, isFailed) ||
+                other.isFailed == isFailed) &&
+            (identical(other.failureReason, failureReason) ||
+                other.failureReason == failureReason));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, content, isPending, isFailed, failureReason);
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$UserMessagePayloadImplCopyWith<_$UserMessagePayloadImpl> get copyWith =>
+      __$$UserMessagePayloadImplCopyWithImpl<_$UserMessagePayloadImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )
+    progress,
+    required TResult Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )
+    complete,
+    required TResult Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )
+    error,
+    required TResult Function(String title, String message, String? action)
+    warning,
+    required TResult Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )
+    code,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
+    required TResult Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )
+    image,
+    required TResult Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )
+    interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
+  }) {
+    return userMessage(content, isPending, isFailed, failureReason);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )?
+    progress,
+    TResult? Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )?
+    complete,
+    TResult? Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )?
+    error,
+    TResult? Function(String title, String message, String? action)? warning,
+    TResult? Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )?
+    code,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
+    TResult? Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )?
+    image,
+    TResult? Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )?
+    interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
+  }) {
+    return userMessage?.call(content, isPending, isFailed, failureReason);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )?
+    progress,
+    TResult Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )?
+    complete,
+    TResult Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )?
+    error,
+    TResult Function(String title, String message, String? action)? warning,
+    TResult Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )?
+    code,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
+    TResult Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )?
+    image,
+    TResult Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )?
+    interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
+    required TResult orElse(),
+  }) {
+    if (userMessage != null) {
+      return userMessage(content, isPending, isFailed, failureReason);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(ProgressPayload value) progress,
+    required TResult Function(CompletePayload value) complete,
+    required TResult Function(ErrorPayload value) error,
+    required TResult Function(WarningPayload value) warning,
+    required TResult Function(CodePayload value) code,
+    required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
+    required TResult Function(ImagePayload value) image,
+    required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
+  }) {
+    return userMessage(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(ProgressPayload value)? progress,
+    TResult? Function(CompletePayload value)? complete,
+    TResult? Function(ErrorPayload value)? error,
+    TResult? Function(WarningPayload value)? warning,
+    TResult? Function(CodePayload value)? code,
+    TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
+    TResult? Function(ImagePayload value)? image,
+    TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
+  }) {
+    return userMessage?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(ProgressPayload value)? progress,
+    TResult Function(CompletePayload value)? complete,
+    TResult Function(ErrorPayload value)? error,
+    TResult Function(WarningPayload value)? warning,
+    TResult Function(CodePayload value)? code,
+    TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
+    TResult Function(ImagePayload value)? image,
+    TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
+    required TResult orElse(),
+  }) {
+    if (userMessage != null) {
+      return userMessage(this);
+    }
+    return orElse();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$UserMessagePayloadImplToJson(this);
+  }
+}
+
+abstract class UserMessagePayload extends Payload {
+  const factory UserMessagePayload({
+    required final String content,
+    final bool isPending,
+    final bool isFailed,
+    final String? failureReason,
+  }) = _$UserMessagePayloadImpl;
+  const UserMessagePayload._() : super._();
+
+  factory UserMessagePayload.fromJson(Map<String, dynamic> json) =
+      _$UserMessagePayloadImpl.fromJson;
+
+  String get content;
+  bool get isPending;
+  bool get isFailed;
+  String? get failureReason;
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$UserMessagePayloadImplCopyWith<_$UserMessagePayloadImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$TaskExecutionPayloadImplCopyWith<$Res> {
+  factory _$$TaskExecutionPayloadImplCopyWith(
+    _$TaskExecutionPayloadImpl value,
+    $Res Function(_$TaskExecutionPayloadImpl) then,
+  ) = __$$TaskExecutionPayloadImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({
+    String title,
+    List<TaskItem> tasks,
+    TaskStatus overallStatus,
+    String? summary,
+    String? prompt,
+    int? durationMs,
+    bool isExpanded,
+  });
+}
+
+/// @nodoc
+class __$$TaskExecutionPayloadImplCopyWithImpl<$Res>
+    extends _$PayloadCopyWithImpl<$Res, _$TaskExecutionPayloadImpl>
+    implements _$$TaskExecutionPayloadImplCopyWith<$Res> {
+  __$$TaskExecutionPayloadImplCopyWithImpl(
+    _$TaskExecutionPayloadImpl _value,
+    $Res Function(_$TaskExecutionPayloadImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? title = null,
+    Object? tasks = null,
+    Object? overallStatus = null,
+    Object? summary = freezed,
+    Object? prompt = freezed,
+    Object? durationMs = freezed,
+    Object? isExpanded = null,
+  }) {
+    return _then(
+      _$TaskExecutionPayloadImpl(
+        title:
+            null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                    as String,
+        tasks:
+            null == tasks
+                ? _value._tasks
+                : tasks // ignore: cast_nullable_to_non_nullable
+                    as List<TaskItem>,
+        overallStatus:
+            null == overallStatus
+                ? _value.overallStatus
+                : overallStatus // ignore: cast_nullable_to_non_nullable
+                    as TaskStatus,
+        summary:
+            freezed == summary
+                ? _value.summary
+                : summary // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        prompt:
+            freezed == prompt
+                ? _value.prompt
+                : prompt // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        durationMs:
+            freezed == durationMs
+                ? _value.durationMs
+                : durationMs // ignore: cast_nullable_to_non_nullable
+                    as int?,
+        isExpanded:
+            null == isExpanded
+                ? _value.isExpanded
+                : isExpanded // ignore: cast_nullable_to_non_nullable
+                    as bool,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$TaskExecutionPayloadImpl extends TaskExecutionPayload {
+  const _$TaskExecutionPayloadImpl({
+    required this.title,
+    required final List<TaskItem> tasks,
+    required this.overallStatus,
+    this.summary,
+    this.prompt,
+    this.durationMs,
+    this.isExpanded = false,
+    final String? $type,
+  }) : _tasks = tasks,
+       $type = $type ?? 'taskExecution',
+       super._();
+
+  factory _$TaskExecutionPayloadImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TaskExecutionPayloadImplFromJson(json);
+
+  @override
+  final String title;
+  final List<TaskItem> _tasks;
+  @override
+  List<TaskItem> get tasks {
+    if (_tasks is EqualUnmodifiableListView) return _tasks;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_tasks);
+  }
+
+  @override
+  final TaskStatus overallStatus;
+  @override
+  final String? summary;
+  @override
+  final String? prompt;
+  @override
+  final int? durationMs;
+  @override
+  @JsonKey()
+  final bool isExpanded;
+
+  @JsonKey(name: 'runtimeType')
+  final String $type;
+
+  @override
+  String toString() {
+    return 'Payload.taskExecution(title: $title, tasks: $tasks, overallStatus: $overallStatus, summary: $summary, prompt: $prompt, durationMs: $durationMs, isExpanded: $isExpanded)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TaskExecutionPayloadImpl &&
+            (identical(other.title, title) || other.title == title) &&
+            const DeepCollectionEquality().equals(other._tasks, _tasks) &&
+            (identical(other.overallStatus, overallStatus) ||
+                other.overallStatus == overallStatus) &&
+            (identical(other.summary, summary) || other.summary == summary) &&
+            (identical(other.prompt, prompt) || other.prompt == prompt) &&
+            (identical(other.durationMs, durationMs) ||
+                other.durationMs == durationMs) &&
+            (identical(other.isExpanded, isExpanded) ||
+                other.isExpanded == isExpanded));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    title,
+    const DeepCollectionEquality().hash(_tasks),
+    overallStatus,
+    summary,
+    prompt,
+    durationMs,
+    isExpanded,
+  );
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TaskExecutionPayloadImplCopyWith<_$TaskExecutionPayloadImpl>
+  get copyWith =>
+      __$$TaskExecutionPayloadImplCopyWithImpl<_$TaskExecutionPayloadImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )
+    progress,
+    required TResult Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )
+    complete,
+    required TResult Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )
+    error,
+    required TResult Function(String title, String message, String? action)
+    warning,
+    required TResult Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )
+    code,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
+    required TResult Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )
+    image,
+    required TResult Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )
+    interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
+  }) {
+    return taskExecution(
+      title,
+      tasks,
+      overallStatus,
+      summary,
+      prompt,
+      durationMs,
+      isExpanded,
+    );
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )?
+    progress,
+    TResult? Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )?
+    complete,
+    TResult? Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )?
+    error,
+    TResult? Function(String title, String message, String? action)? warning,
+    TResult? Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )?
+    code,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
+    TResult? Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )?
+    image,
+    TResult? Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )?
+    interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
+  }) {
+    return taskExecution?.call(
+      title,
+      tasks,
+      overallStatus,
+      summary,
+      prompt,
+      durationMs,
+      isExpanded,
+    );
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )?
+    progress,
+    TResult Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )?
+    complete,
+    TResult Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )?
+    error,
+    TResult Function(String title, String message, String? action)? warning,
+    TResult Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )?
+    code,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
+    TResult Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )?
+    image,
+    TResult Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )?
+    interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
+    required TResult orElse(),
+  }) {
+    if (taskExecution != null) {
+      return taskExecution(
+        title,
+        tasks,
+        overallStatus,
+        summary,
+        prompt,
+        durationMs,
+        isExpanded,
+      );
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(ProgressPayload value) progress,
+    required TResult Function(CompletePayload value) complete,
+    required TResult Function(ErrorPayload value) error,
+    required TResult Function(WarningPayload value) warning,
+    required TResult Function(CodePayload value) code,
+    required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
+    required TResult Function(ImagePayload value) image,
+    required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
+  }) {
+    return taskExecution(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(ProgressPayload value)? progress,
+    TResult? Function(CompletePayload value)? complete,
+    TResult? Function(ErrorPayload value)? error,
+    TResult? Function(WarningPayload value)? warning,
+    TResult? Function(CodePayload value)? code,
+    TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
+    TResult? Function(ImagePayload value)? image,
+    TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
+  }) {
+    return taskExecution?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(ProgressPayload value)? progress,
+    TResult Function(CompletePayload value)? complete,
+    TResult Function(ErrorPayload value)? error,
+    TResult Function(WarningPayload value)? warning,
+    TResult Function(CodePayload value)? code,
+    TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
+    TResult Function(ImagePayload value)? image,
+    TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
+    required TResult orElse(),
+  }) {
+    if (taskExecution != null) {
+      return taskExecution(this);
+    }
+    return orElse();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$TaskExecutionPayloadImplToJson(this);
+  }
+}
+
+abstract class TaskExecutionPayload extends Payload {
+  const factory TaskExecutionPayload({
+    required final String title,
+    required final List<TaskItem> tasks,
+    required final TaskStatus overallStatus,
+    final String? summary,
+    final String? prompt,
+    final int? durationMs,
+    final bool isExpanded,
+  }) = _$TaskExecutionPayloadImpl;
+  const TaskExecutionPayload._() : super._();
+
+  factory TaskExecutionPayload.fromJson(Map<String, dynamic> json) =
+      _$TaskExecutionPayloadImpl.fromJson;
+
+  String get title;
+  List<TaskItem> get tasks;
+  TaskStatus get overallStatus;
+  String? get summary;
+  String? get prompt;
+  int? get durationMs;
+  bool get isExpanded;
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TaskExecutionPayloadImplCopyWith<_$TaskExecutionPayloadImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$HiddenPayloadImplCopyWith<$Res> {
+  factory _$$HiddenPayloadImplCopyWith(
+    _$HiddenPayloadImpl value,
+    $Res Function(_$HiddenPayloadImpl) then,
+  ) = __$$HiddenPayloadImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String reason, String? toolUseId});
+}
+
+/// @nodoc
+class __$$HiddenPayloadImplCopyWithImpl<$Res>
+    extends _$PayloadCopyWithImpl<$Res, _$HiddenPayloadImpl>
+    implements _$$HiddenPayloadImplCopyWith<$Res> {
+  __$$HiddenPayloadImplCopyWithImpl(
+    _$HiddenPayloadImpl _value,
+    $Res Function(_$HiddenPayloadImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? reason = null, Object? toolUseId = freezed}) {
+    return _then(
+      _$HiddenPayloadImpl(
+        reason:
+            null == reason
+                ? _value.reason
+                : reason // ignore: cast_nullable_to_non_nullable
+                    as String,
+        toolUseId:
+            freezed == toolUseId
+                ? _value.toolUseId
+                : toolUseId // ignore: cast_nullable_to_non_nullable
+                    as String?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$HiddenPayloadImpl extends HiddenPayload {
+  const _$HiddenPayloadImpl({
+    required this.reason,
+    this.toolUseId,
+    final String? $type,
+  }) : $type = $type ?? 'hidden',
+       super._();
+
+  factory _$HiddenPayloadImpl.fromJson(Map<String, dynamic> json) =>
+      _$$HiddenPayloadImplFromJson(json);
+
+  @override
+  final String reason;
+  @override
+  final String? toolUseId;
+
+  @JsonKey(name: 'runtimeType')
+  final String $type;
+
+  @override
+  String toString() {
+    return 'Payload.hidden(reason: $reason, toolUseId: $toolUseId)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$HiddenPayloadImpl &&
+            (identical(other.reason, reason) || other.reason == reason) &&
+            (identical(other.toolUseId, toolUseId) ||
+                other.toolUseId == toolUseId));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, reason, toolUseId);
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$HiddenPayloadImplCopyWith<_$HiddenPayloadImpl> get copyWith =>
+      __$$HiddenPayloadImplCopyWithImpl<_$HiddenPayloadImpl>(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )
+    progress,
+    required TResult Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )
+    complete,
+    required TResult Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )
+    error,
+    required TResult Function(String title, String message, String? action)
+    warning,
+    required TResult Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )
+    code,
+    required TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    markdown,
+    required TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )
+    thinking,
+    required TResult Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )
+    image,
+    required TResult Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )
+    interactive,
+    required TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )
+    userMessage,
+    required TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )
+    taskExecution,
+    required TResult Function(String reason, String? toolUseId) hidden,
+  }) {
+    return hidden(reason, toolUseId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )?
+    progress,
+    TResult? Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )?
+    complete,
+    TResult? Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )?
+    error,
+    TResult? Function(String title, String message, String? action)? warning,
+    TResult? Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )?
+    code,
+    TResult? Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult? Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
+    TResult? Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )?
+    image,
+    TResult? Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )?
+    interactive,
+    TResult? Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult? Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult? Function(String reason, String? toolUseId)? hidden,
+  }) {
+    return hidden?.call(reason, toolUseId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(
+      String title,
+      String? description,
+      int current,
+      int total,
+      String? currentStep,
+    )?
+    progress,
+    TResult Function(
+      String title,
+      String? summary,
+      int? duration,
+      int? toolCount,
+    )?
+    complete,
+    TResult Function(
+      String title,
+      String message,
+      String? stackTrace,
+      String? suggestion,
+    )?
+    error,
+    TResult Function(String title, String message, String? action)? warning,
+    TResult Function(
+      String title,
+      String code,
+      String? language,
+      String? filename,
+      int? startLine,
+      List<CodeChange>? changes,
+      StreamingStatus streamingStatus,
+    )?
+    code,
+    TResult Function(
+      String title,
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    markdown,
+    TResult Function(
+      String content,
+      StreamingStatus streamingStatus,
+      String? streamingId,
+    )?
+    thinking,
+    TResult Function(
+      String title,
+      String url,
+      String? caption,
+      int? width,
+      int? height,
+    )?
+    image,
+    TResult Function(
+      String title,
+      String message,
+      String requestId,
+      InteractiveType interactiveType,
+      PermissionStatus status,
+      Map<String, dynamic>? metadata,
+    )?
+    interactive,
+    TResult Function(
+      String content,
+      bool isPending,
+      bool isFailed,
+      String? failureReason,
+    )?
+    userMessage,
+    TResult Function(
+      String title,
+      List<TaskItem> tasks,
+      TaskStatus overallStatus,
+      String? summary,
+      String? prompt,
+      int? durationMs,
+      bool isExpanded,
+    )?
+    taskExecution,
+    TResult Function(String reason, String? toolUseId)? hidden,
+    required TResult orElse(),
+  }) {
+    if (hidden != null) {
+      return hidden(reason, toolUseId);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(ProgressPayload value) progress,
+    required TResult Function(CompletePayload value) complete,
+    required TResult Function(ErrorPayload value) error,
+    required TResult Function(WarningPayload value) warning,
+    required TResult Function(CodePayload value) code,
+    required TResult Function(MarkdownPayload value) markdown,
+    required TResult Function(ThinkingPayload value) thinking,
+    required TResult Function(ImagePayload value) image,
+    required TResult Function(InteractivePayload value) interactive,
+    required TResult Function(UserMessagePayload value) userMessage,
+    required TResult Function(TaskExecutionPayload value) taskExecution,
+    required TResult Function(HiddenPayload value) hidden,
+  }) {
+    return hidden(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(ProgressPayload value)? progress,
+    TResult? Function(CompletePayload value)? complete,
+    TResult? Function(ErrorPayload value)? error,
+    TResult? Function(WarningPayload value)? warning,
+    TResult? Function(CodePayload value)? code,
+    TResult? Function(MarkdownPayload value)? markdown,
+    TResult? Function(ThinkingPayload value)? thinking,
+    TResult? Function(ImagePayload value)? image,
+    TResult? Function(InteractivePayload value)? interactive,
+    TResult? Function(UserMessagePayload value)? userMessage,
+    TResult? Function(TaskExecutionPayload value)? taskExecution,
+    TResult? Function(HiddenPayload value)? hidden,
+  }) {
+    return hidden?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(ProgressPayload value)? progress,
+    TResult Function(CompletePayload value)? complete,
+    TResult Function(ErrorPayload value)? error,
+    TResult Function(WarningPayload value)? warning,
+    TResult Function(CodePayload value)? code,
+    TResult Function(MarkdownPayload value)? markdown,
+    TResult Function(ThinkingPayload value)? thinking,
+    TResult Function(ImagePayload value)? image,
+    TResult Function(InteractivePayload value)? interactive,
+    TResult Function(UserMessagePayload value)? userMessage,
+    TResult Function(TaskExecutionPayload value)? taskExecution,
+    TResult Function(HiddenPayload value)? hidden,
+    required TResult orElse(),
+  }) {
+    if (hidden != null) {
+      return hidden(this);
+    }
+    return orElse();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$HiddenPayloadImplToJson(this);
+  }
+}
+
+abstract class HiddenPayload extends Payload {
+  const factory HiddenPayload({
+    required final String reason,
+    final String? toolUseId,
+  }) = _$HiddenPayloadImpl;
+  const HiddenPayload._() : super._();
+
+  factory HiddenPayload.fromJson(Map<String, dynamic> json) =
+      _$HiddenPayloadImpl.fromJson;
+
+  String get reason;
+  String? get toolUseId;
+
+  /// Create a copy of Payload
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$HiddenPayloadImplCopyWith<_$HiddenPayloadImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 

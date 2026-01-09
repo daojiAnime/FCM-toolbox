@@ -1,10 +1,11 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+
+import '../common/logger.dart';
 
 /// GitHub 更新信息
 class UpdateInfo {
@@ -76,7 +77,7 @@ class GitHubUpdateService extends StateNotifier<UpdateState> {
   /// 检查更新
   Future<UpdateInfo?> checkForUpdate() async {
     if (!Platform.isAndroid) {
-      debugPrint('OTA 更新仅支持 Android');
+      Log.w('GHUpdate', 'OTA 更新仅支持 Android');
       return null;
     }
 
@@ -84,7 +85,7 @@ class GitHubUpdateService extends StateNotifier<UpdateState> {
 
     try {
       final currentVersion = await _getCurrentVersion();
-      debugPrint('当前版本: $currentVersion');
+      Log.i('GHUpdate', '当前版本: $currentVersion');
 
       final response = await _dio.get(
         'https://api.github.com/repos/$_owner/$_repo/releases/latest',
@@ -101,16 +102,14 @@ class GitHubUpdateService extends StateNotifier<UpdateState> {
 
       // 验证 tag 格式
       if (!tagName.startsWith(_tagPrefix)) {
-        debugPrint('非 CC Monitor 版本: $tagName');
         state = UpdateStateNoUpdate();
         return null;
       }
 
       final latestVersion = tagName.replaceFirst(_tagPrefix, '');
-      debugPrint('最新版本: $latestVersion');
+      Log.i('GHUpdate', '最新版本: $latestVersion');
 
       if (!_isNewerVersion(latestVersion, currentVersion)) {
-        debugPrint('已是最新版本');
         state = UpdateStateNoUpdate();
         return null;
       }
@@ -166,8 +165,6 @@ class GitHubUpdateService extends StateNotifier<UpdateState> {
           )
           .listen(
             (event) {
-              debugPrint('OTA 状态: ${event.status} - ${event.value}');
-
               switch (event.status) {
                 case OtaStatus.DOWNLOADING:
                   final progress = int.tryParse(event.value ?? '0') ?? 0;
@@ -175,7 +172,7 @@ class GitHubUpdateService extends StateNotifier<UpdateState> {
                 case OtaStatus.INSTALLING:
                   state = UpdateStateInstalling();
                 case OtaStatus.INSTALLATION_DONE:
-                  debugPrint('安装完成');
+                  Log.i('GHUpdate', '安装完成');
                   state = UpdateStateIdle();
                 case OtaStatus.ALREADY_RUNNING_ERROR:
                   state = UpdateStateError('已有下载任务在进行中');
@@ -190,17 +187,14 @@ class GitHubUpdateService extends StateNotifier<UpdateState> {
                 case OtaStatus.INSTALLATION_ERROR:
                   state = UpdateStateError('安装失败: ${event.value}');
                 case OtaStatus.CANCELED:
-                  debugPrint('更新已取消');
                   state = UpdateStateIdle();
               }
             },
             onError: (e) {
-              debugPrint('OTA 错误: $e');
+              Log.e('GHUpdate', 'OTA 错误: $e');
               state = UpdateStateError('更新失败: $e');
             },
-            onDone: () {
-              debugPrint('OTA 完成');
-            },
+            onDone: () {},
           );
     } catch (e) {
       state = UpdateStateError('启动更新失败: $e');
@@ -238,7 +232,7 @@ class GitHubUpdateService extends StateNotifier<UpdateState> {
       }
       return false;
     } catch (e) {
-      debugPrint('版本比较失败: $e');
+      Log.e('GHUpdate', '版本比较失败: $e');
       return false;
     }
   }

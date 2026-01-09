@@ -13,6 +13,7 @@ class InteractiveMessageCard extends StatelessWidget {
     required this.message,
     required this.requestId,
     required this.interactiveType,
+    this.summary,
     this.metadata,
     this.onApprove,
     this.onDeny,
@@ -26,6 +27,7 @@ class InteractiveMessageCard extends StatelessWidget {
   final String message;
   final String requestId;
   final InteractiveType interactiveType;
+  final String? summary;
   final Map<String, dynamic>? metadata;
   final VoidCallback? onApprove;
   final VoidCallback? onDeny;
@@ -37,11 +39,12 @@ class InteractiveMessageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BaseMessageCard(
+    return LegacyMessageCard(
       type: AppConstants.messageInteractive,
       title: title,
       timestamp: timestamp,
       subtitle: message,
+      summary: summary,
       onTap: onTap,
       isRead: isRead,
       child:

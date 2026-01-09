@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../common/colors.dart';
 import '../services/hapi/hapi_api_service.dart';
+import 'chat_session_page.dart';
 
 /// hapi 会话管理页面
 class SessionManagementPage extends ConsumerStatefulWidget {
@@ -18,6 +19,7 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
   bool _isLoading = true;
   String? _error;
   bool _showArchived = false;
+  String? _processingSessionId; // 正在操作的会话 ID
 
   @override
   void initState() {
@@ -77,6 +79,7 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
       ),
       body: _buildBody(theme),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'session_management_new_session',
         onPressed: () => _showCreateSessionDialog(context),
         icon: const Icon(Icons.add),
         label: const Text('新建会话'),
@@ -106,9 +109,11 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
           if (_activeSessions.isNotEmpty) ...[
             _buildSectionHeader(theme, '活跃会话', _activeSessions.length),
             ..._activeSessions.asMap().entries.map((entry) {
+              final sessionId = entry.value['id'] as String? ?? '';
               return _SessionTile(
                 session: entry.value,
                 onAction: _handleSessionAction,
+                isProcessing: _processingSessionId == sessionId,
               ).animate().fadeIn(
                 duration: const Duration(milliseconds: 300),
                 delay: Duration(milliseconds: entry.key * 50),
@@ -120,10 +125,12 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
             _buildArchivedHeader(theme),
             if (_showArchived)
               ..._archivedSessions.asMap().entries.map((entry) {
+                final sessionId = entry.value['id'] as String? ?? '';
                 return _SessionTile(
                   session: entry.value,
                   isArchived: true,
                   onAction: _handleSessionAction,
+                  isProcessing: _processingSessionId == sessionId,
                 ).animate().fadeIn(duration: const Duration(milliseconds: 200));
               }),
           ],
@@ -267,18 +274,31 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
     String sessionId,
     _SessionAction action,
   ) async {
+    // viewDetail 不需要 loading
+    if (action == _SessionAction.viewDetail) {
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChatSessionPage(sessionId: sessionId),
+          ),
+        );
+      }
+      return;
+    }
+
     final apiService = ref.read(hapiApiServiceProvider);
     if (apiService == null) return;
+
+    // 设置 loading 状态
+    setState(() => _processingSessionId = sessionId);
 
     try {
       bool success = false;
       String message = '';
 
       switch (action) {
-        case _SessionAction.switchTo:
-          success = await apiService.switchSession(sessionId);
-          message = success ? '已切换到会话' : '切换失败';
-          break;
+        case _SessionAction.viewDetail:
+          return; // 已在上面处理
         case _SessionAction.abort:
           final confirmed = await _showConfirmDialog(
             context,
@@ -295,6 +315,10 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
         case _SessionAction.archive:
           success = await apiService.archiveSession(sessionId);
           message = success ? '会话已归档' : '归档失败';
+          break;
+        case _SessionAction.unarchive:
+          success = await apiService.unarchiveSession(sessionId);
+          message = success ? '会话已恢复' : '恢复失败';
           break;
         case _SessionAction.delete:
           final confirmed = await _showConfirmDialog(
@@ -348,6 +372,11 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('操作失败: $e'), backgroundColor: Colors.red),
         );
+      }
+    } finally {
+      // 清除 loading 状态
+      if (mounted) {
+        setState(() => _processingSessionId = null);
       }
     }
   }
@@ -417,13 +446,13 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
     );
   }
 
+  /// 显示权限模式选择对话框 (与 Web 版 @hapi/protocol 对齐)
   Future<String?> _showPermissionModeDialog(BuildContext context) {
     final modes = [
       ('default', '默认', '使用配置文件设置'),
       ('plan', '计划模式', '执行前需确认计划'),
-      ('auto-edit', '自动编辑', '自动执行安全操作'),
-      ('full-auto', '完全自动', '自动执行所有操作'),
-      ('none', '无权限', '禁用所有自动操作'),
+      ('acceptEdits', '自动编辑', '自动执行安全操作'),
+      ('bypassPermissions', '完全自动', '自动执行所有操作'),
     ];
 
     return showDialog<String>(
@@ -512,15 +541,25 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
       final result = await apiService.createSession(directory: directory);
       if (!mounted) return;
 
+      if (result != null) {
+        final sessionId = result['id'] as String?;
+        if (sessionId != null && mounted) {
+          // 创建成功后直接跳转到会话页面
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ChatSessionPage(sessionId: sessionId),
+            ),
+          );
+          return;
+        }
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result != null ? '会话已创建' : '创建失败'),
           backgroundColor: result != null ? Colors.green : Colors.red,
         ),
       );
-      if (result != null) {
-        _loadSessions();
-      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -532,9 +571,10 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
 
 /// 会话操作类型
 enum _SessionAction {
-  switchTo,
+  viewDetail,
   abort,
   archive,
+  unarchive,
   delete,
   rename,
   setPermissionMode,
@@ -547,34 +587,90 @@ class _SessionTile extends StatelessWidget {
     required this.session,
     required this.onAction,
     this.isArchived = false,
+    this.isProcessing = false,
   });
 
   final Map<String, dynamic> session;
   final void Function(String sessionId, _SessionAction action) onAction;
   final bool isArchived;
+  final bool isProcessing;
+
+  /// 从 session 数据中提取显示名称
+  /// 优先级：metadata.name (非 Unnamed) > metadata.summary.text > metadata.path 最后一段 > session.id 前8位
+  String _getSessionTitle(Map<String, dynamic> session) {
+    final metadata = session['metadata'] as Map<String, dynamic>?;
+
+    // 1. 检查 metadata.name（跳过 'Unnamed' 默认值）
+    final metadataName = metadata?['name'] as String?;
+    if (metadataName != null &&
+        metadataName.isNotEmpty &&
+        metadataName != 'Unnamed') {
+      return metadataName;
+    }
+
+    // 2. 检查 metadata.summary.text
+    final summary = metadata?['summary'] as Map<String, dynamic>?;
+    final summaryText = summary?['text'] as String?;
+    if (summaryText != null && summaryText.isNotEmpty) {
+      return summaryText;
+    }
+
+    // 3. 从 metadata.path 提取最后一段
+    final path = metadata?['path'] as String?;
+    if (path != null && path.isNotEmpty) {
+      final parts = path.split('/').where((p) => p.isNotEmpty).toList();
+      if (parts.isNotEmpty) {
+        return parts.last;
+      }
+    }
+
+    // 4. 使用 session.id 前 8 位
+    final sessionId = session['id'] as String? ?? '';
+    return sessionId.length >= 8 ? sessionId.substring(0, 8) : sessionId;
+  }
+
+  /// 格式化相对时间
+  String _formatRelativeTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+
+    if (diff.inSeconds < 60) return '刚刚';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}分钟前';
+    if (diff.inHours < 24) return '${diff.inHours}小时前';
+    if (diff.inDays < 7) return '${diff.inDays}天前';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}周前';
+    return '${(diff.inDays / 30).floor()}月前';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sessionId = session['id'] as String? ?? '';
-    final name =
-        session['name'] as String? ??
-        session['directory'] as String? ??
-        'Unnamed';
-    final directory = session['directory'] as String? ?? '';
+    final name = _getSessionTitle(session);
+    final metadata = session['metadata'] as Map<String, dynamic>?;
+    final directory = metadata?['path'] as String? ?? '';
     final model = session['model'] as String? ?? 'sonnet';
     final permissionMode = session['permissionMode'] as String? ?? 'default';
     final status = session['status'] as String? ?? '';
     final isActive = status == 'active' || status == 'waiting';
+
+    // 解析时间信息（可能是 int 时间戳或 String ISO 格式）
+    DateTime? updatedAt;
+    final updatedAtRaw = session['updatedAt'];
+    if (updatedAtRaw is int) {
+      updatedAt = DateTime.fromMillisecondsSinceEpoch(updatedAtRaw);
+    } else if (updatedAtRaw is String) {
+      updatedAt = DateTime.tryParse(updatedAtRaw);
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap:
-            isArchived
+            isProcessing
                 ? null
-                : () => onAction(sessionId, _SessionAction.switchTo),
+                : () => onAction(sessionId, _SessionAction.viewDetail),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -583,48 +679,70 @@ class _SessionTile extends StatelessWidget {
               // 标题行
               Row(
                 children: [
-                  // 状态指示器
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          isArchived
-                              ? theme.colorScheme.outline
-                              : isActive
-                              ? Colors.green
-                              : Colors.orange,
+                  // 状态指示器 or Loading
+                  if (isProcessing)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            isArchived
+                                ? theme.colorScheme.outline
+                                : isActive
+                                ? Colors.green
+                                : Colors.orange,
+                      ),
                     ),
-                  ),
                   const SizedBox(width: 12),
                   // 名称
                   Expanded(
                     child: Text(
-                      name.split('/').last,
+                      name,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: isProcessing ? theme.colorScheme.outline : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // 操作菜单
-                  _buildActionMenu(context, sessionId),
+                  // 操作菜单（处理中时禁用）
+                  if (!isProcessing) _buildActionMenu(context, sessionId),
                 ],
               ),
               const SizedBox(height: 8),
-              // 目录
-              if (directory.isNotEmpty)
-                Text(
-                  directory,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                    fontFamily: 'monospace',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              // 目录 + 时间
+              Row(
+                children: [
+                  if (directory.isNotEmpty)
+                    Expanded(
+                      child: Text(
+                        directory,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  if (directory.isEmpty) const Spacer(),
+                  if (updatedAt != null)
+                    Text(
+                      _formatRelativeTime(updatedAt),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 12),
               // 标签
               Wrap(
@@ -657,16 +775,17 @@ class _SessionTile extends StatelessWidget {
       icon: const Icon(Icons.more_vert),
       itemBuilder:
           (context) => [
-            if (!isArchived) ...[
-              const PopupMenuItem(
-                value: _SessionAction.switchTo,
-                child: ListTile(
-                  leading: Icon(Icons.swap_horiz),
-                  title: Text('切换到此会话'),
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
+            // 查看详情（所有会话都有）
+            const PopupMenuItem(
+              value: _SessionAction.viewDetail,
+              child: ListTile(
+                leading: Icon(Icons.open_in_new),
+                title: Text('查看详情'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
               ),
+            ),
+            if (!isArchived) ...[
               const PopupMenuItem(
                 value: _SessionAction.abort,
                 child: ListTile(
@@ -715,7 +834,16 @@ class _SessionTile extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            if (isArchived)
+            if (isArchived) ...[
+              const PopupMenuItem(
+                value: _SessionAction.unarchive,
+                child: ListTile(
+                  leading: Icon(Icons.unarchive, color: Colors.blue),
+                  title: Text('恢复', style: TextStyle(color: Colors.blue)),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               const PopupMenuItem(
                 value: _SessionAction.delete,
                 child: ListTile(
@@ -725,6 +853,7 @@ class _SessionTile extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
+            ],
           ],
       onSelected: (action) => onAction(sessionId, action),
     );
@@ -768,13 +897,13 @@ class _SessionTile extends StatelessWidget {
     };
   }
 
+  /// 权限模式显示名称 (与 Web 版 @hapi/protocol 对齐)
   String _permissionModeDisplayName(String mode) {
     return switch (mode) {
       'default' => '默认',
       'plan' => '计划',
-      'auto-edit' => '自动编辑',
-      'full-auto' => '完全自动',
-      'none' => '无权限',
+      'acceptEdits' => '自动编辑',
+      'bypassPermissions' => '完全自动',
       _ => mode,
     };
   }

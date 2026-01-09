@@ -36,6 +36,18 @@ Map<String, dynamic> _$$TodoItemImplToJson(_$TodoItemImpl instance) =>
       'activeForm': instance.activeForm,
     };
 
+_$AgentStateImpl _$$AgentStateImplFromJson(Map<String, dynamic> json) =>
+    _$AgentStateImpl(
+      controlledByUser: json['controlledByUser'] as bool? ?? false,
+      requests: json['requests'] as Map<String, dynamic>? ?? const {},
+    );
+
+Map<String, dynamic> _$$AgentStateImplToJson(_$AgentStateImpl instance) =>
+    <String, dynamic>{
+      'controlledByUser': instance.controlledByUser,
+      'requests': instance.requests,
+    };
+
 _$SessionImpl _$$SessionImplFromJson(Map<String, dynamic> json) =>
     _$SessionImpl(
       id: json['id'] as String,
@@ -63,6 +75,13 @@ _$SessionImpl _$$SessionImplFromJson(Map<String, dynamic> json) =>
               ? null
               : DateTime.parse(json['endedAt'] as String),
       toolCallCount: (json['toolCallCount'] as num?)?.toInt() ?? 0,
+      agentState:
+          json['agentState'] == null
+              ? null
+              : AgentState.fromJson(json['agentState'] as Map<String, dynamic>),
+      permissionMode: json['permissionMode'] as String? ?? 'default',
+      modelMode: json['modelMode'] as String? ?? 'default',
+      contextSize: (json['contextSize'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$$SessionImplToJson(_$SessionImpl instance) =>
@@ -78,10 +97,15 @@ Map<String, dynamic> _$$SessionImplToJson(_$SessionImpl instance) =>
       'lastUpdatedAt': instance.lastUpdatedAt.toIso8601String(),
       'endedAt': instance.endedAt?.toIso8601String(),
       'toolCallCount': instance.toolCallCount,
+      'agentState': instance.agentState,
+      'permissionMode': instance.permissionMode,
+      'modelMode': instance.modelMode,
+      'contextSize': instance.contextSize,
     };
 
 const _$SessionStatusEnumMap = {
   SessionStatus.running: 'running',
   SessionStatus.waiting: 'waiting',
   SessionStatus.completed: 'completed',
+  SessionStatus.error: 'error',
 };

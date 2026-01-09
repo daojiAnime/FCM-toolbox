@@ -1,5 +1,6 @@
+import '../common/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'hapi/hapi_config_service.dart';
 import 'hapi/hapi_api_service.dart';
@@ -21,12 +22,12 @@ final interactionServiceProvider = Provider<BaseInteractionService>((ref) {
 
   // 如果 hapi 已启用且已配置，优先使用 hapi
   if (hapiConfig.enabled && hapiConfig.isConfigured && hapiApiService != null) {
-    debugPrint('[Interaction] Using hapi service');
+    Log.i('Interact', 'Using hapi service');
     return HapiInteractionService(hapiApiService);
   }
 
   // 回退到 Firebase Functions
-  debugPrint('[Interaction] Using Firebase service');
+  Log.i('Interact', 'Using Firebase service');
   return FirebaseInteractionService();
 });
 
@@ -48,17 +49,19 @@ class FirebaseInteractionService implements BaseInteractionService {
         'response': response ?? {},
       });
 
-      debugPrint(
+      Log.i(
+        'Interact',
         '[Firebase] Interaction response: $requestId -> ${status.name}',
       );
       return result.data['success'] == true;
     } on FirebaseFunctionsException catch (e) {
-      debugPrint(
+      Log.i(
+        'Interact',
         '[Firebase] Failed to respond interaction: ${e.code} - ${e.message}',
       );
       rethrow;
     } catch (e) {
-      debugPrint('[Firebase] Failed to respond interaction: $e');
+      Log.i('Interact', 'Failed to respond interaction: $e');
       rethrow;
     }
   }
@@ -84,7 +87,7 @@ class FirebaseInteractionService implements BaseInteractionService {
   @override
   Future<bool> sendMessage(String sessionId, String message) async {
     // Firebase 不支持双向消息发送
-    debugPrint('[Firebase] sendMessage not supported');
+    Log.i('Interact', 'sendMessage not supported');
     return false;
   }
 
@@ -97,7 +100,8 @@ class FirebaseInteractionService implements BaseInteractionService {
       });
       return result.data;
     } on FirebaseFunctionsException catch (e) {
-      debugPrint(
+      Log.i(
+        'Interact',
         '[Firebase] Failed to get interaction: ${e.code} - ${e.message}',
       );
       return null;
@@ -122,16 +126,29 @@ class HapiInteractionService implements BaseInteractionService {
     try {
       final sessionId = await _getSessionIdForRequest(requestId);
       if (sessionId == null) {
-        debugPrint('[hapi] Cannot find session for request: $requestId');
+        Log.e('Interact', 'Cannot find session for request: $requestId');
         return false;
       }
+
+      // 提取高级参数
+      final mode = response?['mode'] as String?;
+      final allowTools =
+          (response?['allowTools'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList();
+      final decision = response?['decision'] as String?;
+      final answers = response?['answers'] as Map<String, List<String>>?;
 
       return await _apiService.approvePermission(
         sessionId: sessionId,
         requestId: requestId,
+        mode: mode,
+        allowTools: allowTools,
+        decision: decision,
+        answers: answers,
       );
     } catch (e) {
-      debugPrint('[hapi] Failed to approve: $e');
+      Log.e('Interact', 'Failed to approve: $e');
       rethrow;
     }
   }
@@ -141,17 +158,17 @@ class HapiInteractionService implements BaseInteractionService {
     try {
       final sessionId = await _getSessionIdForRequest(requestId);
       if (sessionId == null) {
-        debugPrint('[hapi] Cannot find session for request: $requestId');
+        Log.e('Interact', 'Cannot find session for request: $requestId');
         return false;
       }
 
       return await _apiService.denyPermission(
         sessionId: sessionId,
         requestId: requestId,
-        reason: response?['reason'] as String?,
+        decision: response?['decision'] as String?,
       );
     } catch (e) {
-      debugPrint('[hapi] Failed to deny: $e');
+      Log.e('Interact', 'Failed to deny: $e');
       rethrow;
     }
   }
@@ -161,7 +178,7 @@ class HapiInteractionService implements BaseInteractionService {
     try {
       return await _apiService.sendMessage(sessionId, message);
     } catch (e) {
-      debugPrint('[hapi] Failed to send message: $e');
+      Log.e('Interact', 'Failed to send message: $e');
       rethrow;
     }
   }
@@ -200,7 +217,7 @@ class HapiInteractionService implements BaseInteractionService {
         }
       }
     } catch (e) {
-      debugPrint('[hapi] Failed to search sessions: $e');
+      Log.e('Interact', 'Failed to search sessions: $e');
     }
 
     return null;

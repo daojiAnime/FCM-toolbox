@@ -11,6 +11,8 @@ enum SessionStatus {
   waiting,
   @JsonValue('completed')
   completed,
+  @JsonValue('error')
+  error,
 }
 
 /// 会话进度
@@ -37,6 +39,21 @@ class TodoItem with _$TodoItem {
 
   factory TodoItem.fromJson(Map<String, dynamic> json) =>
       _$TodoItemFromJson(json);
+}
+
+/// Agent 状态 - 从 hapi API 返回
+@freezed
+class AgentState with _$AgentState {
+  const factory AgentState({
+    /// 是否由本地终端控制
+    @Default(false) bool controlledByUser,
+
+    /// 待处理的权限请求 (key: requestId)
+    @Default({}) Map<String, dynamic> requests,
+  }) = _AgentState;
+
+  factory AgentState.fromJson(Map<String, dynamic> json) =>
+      _$AgentStateFromJson(json);
 }
 
 /// 会话模型
@@ -77,6 +94,18 @@ class Session with _$Session {
 
     /// 总工具调用次数
     @Default(0) int toolCallCount,
+
+    /// Agent 状态
+    AgentState? agentState,
+
+    /// 权限模式 (default, plan, acceptEdits, bypassPermissions)
+    @Default('default') String permissionMode,
+
+    /// 模型模式 (default, sonnet, opus, haiku)
+    @Default('default') String modelMode,
+
+    /// 上下文大小 (tokens)
+    int? contextSize,
   }) = _Session;
 
   factory Session.fromJson(Map<String, dynamic> json) =>

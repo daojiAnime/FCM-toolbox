@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../common/logger.dart';
 import '../models/message.dart';
 import '../models/payload/payload.dart';
 
@@ -51,7 +52,7 @@ class FcmService {
   /// 注意：Token 更新现在由 main.dart 中的 _initializeFcm 直接处理
   /// 通过 settingsNotifier.setFcmToken(token) 更新状态
   void _onTokenRefresh(String token) {
-    debugPrint('FCM Token refreshed: $token');
+    Log.i('FCM', 'Token refreshed');
   }
 
   /// 获取当前 Token
@@ -122,7 +123,7 @@ class FcmService {
         payload: _parsePayload(type, payloadJson),
       );
     } catch (e) {
-      debugPrint('Failed to parse FCM message: $e');
+      Log.e('FCM', 'Failed to parse message', e);
       return null;
     }
   }
@@ -226,11 +227,52 @@ class FcmService {
 
 /// 后台消息处理器
 /// 注意：后台处理器在独立 isolate 中运行，无法访问 Riverpod 容器
-/// CC Monitor 使用 Firestore 实时订阅模式，消息已存储在云端
-/// 当 App 返回前台时，FirestoreMessageService 会自动同步最新消息
+/// 使用 SharedPreferences 缓存消息，App 启动时会处理这些缓存
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('Background message received: ${message.messageId}');
-  // 后台消息由 Firestore 实时订阅处理，无需本地持久化
-  // 如需离线支持，可使用 SharedPreferences 队列消息 ID
+  try {
+    // 获取 SharedPreferences 实例
+    final prefs = await SharedPreferences.getInstance();
+
+    // 准备消息数据
+    final messageData = {
+      'messageId':
+          message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      'title':
+          message.notification?.title ?? message.data['title'] ?? 'New Message',
+      'body': message.notification?.body ?? message.data['body'] ?? '',
+      'data': message.data,
+      'receivedAt': DateTime.now().toIso8601String(),
+    };
+
+    // 读取现有的后台消息列表
+    final backgroundMessagesJson = prefs.getString('background_messages');
+    List<dynamic> backgroundMessages = [];
+
+    if (backgroundMessagesJson != null && backgroundMessagesJson.isNotEmpty) {
+      try {
+        backgroundMessages =
+            jsonDecode(backgroundMessagesJson) as List<dynamic>;
+      } catch (e) {
+        Log.e('FCM', 'Failed to parse background messages', e);
+        backgroundMessages = [];
+      }
+    }
+
+    // 添加新消息到列表开头
+    backgroundMessages.insert(0, messageData);
+
+    // 限制最多保存 50 条消息（FIFO）
+    if (backgroundMessages.length > 50) {
+      backgroundMessages = backgroundMessages.sublist(0, 50);
+    }
+
+    // 保存更新后的列表
+    await prefs.setString(
+      'background_messages',
+      jsonEncode(backgroundMessages),
+    );
+  } catch (e) {
+    Log.e('FCM', 'Failed to cache background message', e);
+  }
 }

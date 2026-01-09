@@ -1,42 +1,62 @@
-# FCM toolbox
+# FCM-toolbox
 
-This public toolbox allows you to easily **test** and **debug** the [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging/) service.
-- Send and receive FCM messages
-- Manage registered devices
-- Self-hosting capabilities
+Claude Code 远程监控与控制工具，支持 Web 和 Flutter 客户端。
 
-**On the public toolbox versions, users share the same [FCM](https://firebase.google.com/docs/cloud-messaging/) and [FRD](https://firebase.google.com/docs/database/) instances, be responsible!**
+## 项目组成
 
-![demo](art/demo.gif)
+| 目录 | 说明 | 技术栈 |
+|------|------|--------|
+| `/web` | Web 客户端 | React + TypeScript + Vite + Tailwind |
+| `/cc_monitor` | Flutter 客户端 | Flutter + Riverpod + Drift |
 
-## Android app
+## 平台支持
 
-Download the latest public version on the [Play Store](https://play.google.com/store/apps/details?id=fr.smarquis.fcm) or choose your [release version](https://github.com/SimonMarquis/FCM-toolbox/releases).
+| 平台 | Web | Flutter |
+|------|-----|---------|
+| Web | ✅ | ✅ |
+| iOS | - | ✅ |
+| Android | - | ✅ |
+| macOS | - | ✅ |
 
-- Notify its presence and send its FCM token to a remote server
-- Issue a notification for each message
-- Retain all received messages
+## 快速开始
 
-![android_empty](art/android_empty.png) ![android_lis](art/android_list.png) ![android_notifications](art/android_notifications.png)
+### Web
 
-### Configuration
+```bash
+cd web
+pnpm install
+pnpm dev
+```
 
-You can build your own version of the Android FCM toolbox app and provide your own `google-services.json` file.  
-[See official documentation](https://firebase.google.com/docs/cloud-messaging/android/client).
+### Flutter
 
-## Web app
+```bash
+cd cc_monitor
+flutter pub get
+flutter run
+```
 
-The public web app is located at [https://fcm-toolbox-public.web.app](https://fcm-toolbox-public.web.app)
+## 开发
 
-- Send multiple types of payloads
-- Maintain a local list of devices
-- See online devices
+### 生成代码 (Flutter)
 
-![web](art/web.png)
+```bash
+cd cc_monitor
+dart run build_runner build --delete-conflicting-outputs
+```
 
-### Configuration
+### 构建发布
 
-You can host your own version of the web FCM toolbox or simply provide your own Firebase identifiers.  
-[See official documentation](https://firebase.google.com/docs/cloud-messaging/js/client).  
+```bash
+# Web
+cd web && pnpm build
 
-![web_configuration](art/web_configuration.png) 
+# Flutter
+cd cc_monitor && flutter build ios      # iOS
+cd cc_monitor && flutter build apk      # Android
+cd cc_monitor && flutter build macos    # macOS
+```
+
+## 文档
+
+详细项目架构请查看 [CLAUDE.md](./CLAUDE.md)

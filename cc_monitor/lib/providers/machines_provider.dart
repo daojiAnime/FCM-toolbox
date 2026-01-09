@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../common/logger.dart';
 import '../services/hapi/hapi_api_service.dart';
 import '../services/hapi/hapi_config_service.dart';
 
@@ -20,7 +20,7 @@ final machinesProvider = FutureProvider.autoDispose<List<HapiMachine>>((
     final machinesData = await apiService.getMachines();
     return machinesData.map((data) => HapiMachine.fromJson(data)).toList();
   } catch (e) {
-    debugPrint('[Machines] Failed to load machines: $e');
+    Log.e('MachProv', 'Failed to load machines: $e');
     rethrow;
   }
 });
@@ -86,10 +86,14 @@ class SpawnSessionNotifier extends StateNotifier<SpawnSessionState> {
   final Ref _ref;
 
   /// 在指定机器上启动新会话
+  /// [agent] 代理类型: 'claude', 'codex', 'gemini' (默认 'claude')
   Future<bool> spawnSession({
     required String machineId,
     String? projectPath,
-    String? model,
+    String? agent,
+    bool? yolo,
+    String? sessionType,
+    String? worktreeName,
   }) async {
     final apiService = _ref.read(hapiApiServiceProvider);
     if (apiService == null) {
@@ -103,7 +107,10 @@ class SpawnSessionNotifier extends StateNotifier<SpawnSessionState> {
       final result = await apiService.spawnSession(
         machineId: machineId,
         directory: projectPath,
-        model: model,
+        agent: agent,
+        yolo: yolo,
+        sessionType: sessionType,
+        worktreeName: worktreeName,
       );
 
       final sessionId =
@@ -113,10 +120,10 @@ class SpawnSessionNotifier extends StateNotifier<SpawnSessionState> {
         lastSpawnedSessionId: sessionId,
       );
 
-      debugPrint('[SpawnSession] Session spawned: $sessionId');
+      Log.i('SpawnSess', 'Session spawned: $sessionId');
       return true;
     } catch (e) {
-      debugPrint('[SpawnSession] Failed to spawn session: $e');
+      Log.e('SpawnSess', 'Failed to spawn session: $e');
       state = state.copyWith(isSpawning: false, error: e.toString());
       return false;
     }

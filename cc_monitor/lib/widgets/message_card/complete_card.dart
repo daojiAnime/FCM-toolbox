@@ -10,6 +10,7 @@ class CompleteMessageCard extends StatelessWidget {
     required this.title,
     required this.timestamp,
     this.summary,
+    this.executionSummary,
     this.duration,
     this.toolCount,
     this.onTap,
@@ -19,6 +20,7 @@ class CompleteMessageCard extends StatelessWidget {
   final String title;
   final DateTime timestamp;
   final String? summary;
+  final String? executionSummary;
   final int? duration;
   final int? toolCount;
   final VoidCallback? onTap;
@@ -35,11 +37,12 @@ class CompleteMessageCard extends StatelessWidget {
       stats.add('$toolCount 次工具调用');
     }
 
-    return BaseMessageCard(
+    return LegacyMessageCard(
       type: AppConstants.messageComplete,
       title: title,
       timestamp: timestamp,
       subtitle: summary,
+      summary: executionSummary,
       onTap: onTap,
       isRead: isRead,
       // trailing 已移除：状态标签"已完成"已提供足够信息

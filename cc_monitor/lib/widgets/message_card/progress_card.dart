@@ -10,6 +10,7 @@ class ProgressMessageCard extends StatelessWidget {
     required this.title,
     required this.timestamp,
     this.description,
+    this.summary,
     this.current = 0,
     this.total = 0,
     this.currentStep,
@@ -20,6 +21,7 @@ class ProgressMessageCard extends StatelessWidget {
   final String title;
   final DateTime timestamp;
   final String? description;
+  final String? summary;
   final int current;
   final int total;
   final String? currentStep;
@@ -32,11 +34,13 @@ class ProgressMessageCard extends StatelessWidget {
     final hasProgress = total > 0;
     final progress = hasProgress ? current / total : 0.0;
 
-    return BaseMessageCard(
+    return LegacyMessageCard(
       type: AppConstants.messageProgress,
       title: title,
       timestamp: timestamp,
-      subtitle: description,
+      subtitle:
+          (summary != null && description == summary) ? null : description,
+      summary: summary,
       onTap: onTap,
       isRead: isRead,
       child:

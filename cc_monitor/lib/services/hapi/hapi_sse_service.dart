@@ -1,20 +1,39 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:math';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
+import '../../common/logger.dart';
 import 'hapi_config_service.dart';
+import 'hapi_api_service.dart';
 
-/// SSE 事件类型
+/// SSE 事件类型 (与 hapi web 保持一致)
 enum HapiSseEventType {
+  // 会话事件
   sessionUpdate,
   sessionCreated,
   sessionEnded,
-  message,
+  sessionAdded, // hapi: session-added
+  sessionUpdated, // hapi: session-updated
+  sessionRemoved, // hapi: session-removed
+  // 消息事件
+  message, // hapi: message-received
   permissionRequest,
   todoUpdate,
+
+  // 机器事件
   machineUpdate,
+  machineUpdated, // hapi: machine-updated
+  // 连接事件
+  connectionChanged, // hapi: connection-changed (包含 subscriptionId)
   connected,
+
+  // 流式内容
+  streamingContent,
+  streamingComplete,
+
+  // 其他
+  toast, // hapi: toast
   error,
   unknown,
 }
@@ -28,20 +47,30 @@ class HapiSseEvent {
   final String? sessionId;
   final String? raw;
 
-  factory HapiSseEvent.fromRaw(String eventType, String data) {
+  factory HapiSseEvent.fromRaw(String sseEventType, String data) {
     Map<String, dynamic>? parsedData;
     String? sessionId;
+    String actualEventType = sseEventType;
 
     try {
       if (data.isNotEmpty) {
         parsedData = jsonDecode(data) as Map<String, dynamic>?;
+
+        // hapi SSE 结构: 所有事件都通过 SSE "message" 发送
+        // 真正的事件类型在数据的 type 字段中: { type: 'connection-changed', data: {...} }
+        // 或 { type: 'message-received', sessionId: 'xxx', message: {...} }
+        final dataType = parsedData?['type'] as String?;
+        if (dataType != null && dataType.isNotEmpty) {
+          actualEventType = dataType;
+        }
+
         sessionId = parsedData?['sessionId'] as String?;
       }
     } catch (e) {
-      debugPrint('[SSE] Failed to parse event data: $e');
+      Log.e('SSE', 'Failed to parse event data', e);
     }
 
-    final type = _parseEventType(eventType);
+    final type = _parseEventType(actualEventType);
 
     return HapiSseEvent(
       type: type,
@@ -53,6 +82,7 @@ class HapiSseEvent {
 
   static HapiSseEventType _parseEventType(String eventType) {
     switch (eventType) {
+      // 会话事件
       case 'session_update':
       case 'sessionUpdate':
         return HapiSseEventType.sessionUpdate;
@@ -62,7 +92,19 @@ class HapiSseEvent {
       case 'session_ended':
       case 'sessionEnded':
         return HapiSseEventType.sessionEnded;
-      case 'message':
+      case 'session-added':
+      case 'sessionAdded':
+        return HapiSseEventType.sessionAdded;
+      case 'session-updated':
+      case 'sessionUpdated':
+        return HapiSseEventType.sessionUpdated;
+      case 'session-removed':
+      case 'sessionRemoved':
+        return HapiSseEventType.sessionRemoved;
+
+      // 消息事件 (hapi 使用 message-received)
+      case 'message-received':
+      case 'messageReceived':
         return HapiSseEventType.message;
       case 'permission_request':
       case 'permissionRequest':
@@ -70,14 +112,41 @@ class HapiSseEvent {
       case 'todo_update':
       case 'todoUpdate':
         return HapiSseEventType.todoUpdate;
+
+      // 机器事件
       case 'machine_update':
       case 'machineUpdate':
         return HapiSseEventType.machineUpdate;
+      case 'machine-updated':
+      case 'machineUpdated':
+        return HapiSseEventType.machineUpdated;
+
+      // 连接事件
+      case 'connection-changed':
+      case 'connectionChanged':
+        return HapiSseEventType.connectionChanged;
       case 'connected':
         return HapiSseEventType.connected;
+
+      // 流式内容
+      case 'streaming_content':
+      case 'streamingContent':
+      case 'content_chunk':
+      case 'contentChunk':
+        return HapiSseEventType.streamingContent;
+      case 'streaming_complete':
+      case 'streamingComplete':
+      case 'content_complete':
+      case 'contentComplete':
+        return HapiSseEventType.streamingComplete;
+
+      // 其他
+      case 'toast':
+        return HapiSseEventType.toast;
       case 'error':
         return HapiSseEventType.error;
       default:
+        Log.w('SSE', 'Unknown event type: $eventType');
         return HapiSseEventType.unknown;
     }
   }
@@ -130,17 +199,28 @@ class HapiConnectionState {
 
 /// hapi SSE 服务 - 管理与 hapi server 的实时连接
 class HapiSseService {
-  HapiSseService(this._config);
+  HapiSseService(this._config, this._apiService);
 
   final HapiConfig _config;
+  final HapiApiService? _apiService;
 
-  http.Client? _client;
+  Dio? _dio;
+  CancelToken? _cancelToken;
   StreamSubscription<String>? _subscription;
   Timer? _reconnectTimer;
+  Timer? _heartbeatTimer;
 
   // SSE 断线续传支持
   String? _lastEventId;
   Duration? _serverRetryDelay;
+
+  // SSE 订阅 ID (用于 visibility API)
+  String? _subscriptionId;
+
+  // 心跳检测 - SSE 服务器通常每 15-30 秒发送一次心跳
+  DateTime? _lastEventTime;
+  static const _heartbeatCheckInterval = Duration(seconds: 15);
+  static const _heartbeatTimeout = Duration(seconds: 45);
 
   // 事件流控制器
   final _eventController = StreamController<HapiSseEvent>.broadcast();
@@ -168,16 +248,19 @@ class HapiSseService {
   /// 是否已连接
   bool get isConnected => _currentState.isConnected;
 
+  /// SSE 订阅 ID (用于 visibility API)
+  String? get subscriptionId => _subscriptionId;
+
   /// 连接到 SSE 端点
   Future<void> connect() async {
     if (!_config.isConfigured || !_config.enabled) {
-      debugPrint('[SSE] hapi not configured or disabled');
+      Log.i('SSE', 'Not configured or disabled');
       return;
     }
 
     if (_currentState.status == HapiConnectionStatus.connecting ||
         _currentState.status == HapiConnectionStatus.connected) {
-      debugPrint('[SSE] Already connecting or connected');
+      Log.w('SSE', 'Already connecting or connected');
       return;
     }
 
@@ -193,30 +276,62 @@ class HapiSseService {
 
   Future<void> _doConnect() async {
     try {
-      _client?.close();
-      _client = http.Client();
+      _cancelToken?.cancel();
+      _dio?.close();
 
-      final url = '${_config.serverUrl}/api/events';
-      debugPrint('[SSE] Connecting to $url');
+      _dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: Duration.zero,
+          headers: {
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        ),
+      );
+      _cancelToken = CancelToken();
 
-      final request = http.Request('GET', Uri.parse(url));
-      request.headers['Authorization'] = 'Bearer ${_config.apiToken}';
-      request.headers['Accept'] = 'text/event-stream';
-      request.headers['Cache-Control'] = 'no-cache';
-      // 断线续传：发送上次收到的事件 ID
-      if (_lastEventId != null) {
-        request.headers['Last-Event-ID'] = _lastEventId!;
-        debugPrint('[SSE] Resuming from event ID: $_lastEventId');
+      String? jwtToken;
+      if (_apiService != null) {
+        jwtToken = await _apiService.getJwtToken();
+      }
+      if (jwtToken == null || jwtToken.isEmpty) {
+        throw Exception('Failed to get JWT token for SSE connection');
       }
 
-      final response = await _client!.send(request);
+      final queryParams = <String, String>{
+        'token': jwtToken,
+        'visibility': 'visible',
+      };
+      if (_lastEventId != null) {
+        queryParams['lastEventId'] = _lastEventId!;
+      }
 
+      final url = '${_config.serverUrl}/api/events';
+      Log.i('SSE', 'Connecting to $url');
+
+      final response = await _dio!.get<ResponseBody>(
+        url,
+        queryParameters: queryParams,
+        options: Options(
+          responseType: ResponseType.stream,
+          headers: {
+            'Authorization': 'Bearer $jwtToken',
+            if (_lastEventId != null) 'Last-Event-ID': _lastEventId!,
+          },
+        ),
+        cancelToken: _cancelToken,
+      );
+
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        throw Exception('Authentication failed: ${response.statusCode}');
+      }
       if (response.statusCode != 200) {
         throw Exception('SSE connection failed: ${response.statusCode}');
       }
 
-      debugPrint('[SSE] Connected, streaming events...');
-
+      Log.i('SSE', 'Connected');
       _updateState(
         _currentState.copyWith(
           status: HapiConnectionStatus.connected,
@@ -225,14 +340,18 @@ class HapiSseService {
           errorMessage: null,
         ),
       );
-
-      // 发送连接成功事件
       _eventController.add(
         const HapiSseEvent(type: HapiSseEventType.connected),
       );
+      _startHeartbeatCheck();
 
-      // 解析 SSE 流
-      _subscription = response.stream
+      final stream = response.data?.stream;
+      if (stream == null) {
+        throw Exception('No stream in response');
+      }
+
+      _subscription = stream
+          .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .listen(
@@ -241,28 +360,38 @@ class HapiSseService {
             onDone: _handleDone,
             cancelOnError: false,
           );
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) return;
+      Log.e('SSE', 'Dio error', e);
+      _handleError(e);
     } catch (e) {
-      debugPrint('[SSE] Connection error: $e');
+      Log.e('SSE', 'Connection error', e);
       _handleError(e);
     }
   }
 
-  // SSE 行解析状态
   String _currentEventType = 'message';
   StringBuffer _currentData = StringBuffer();
 
   void _handleLine(String line) {
+    _lastEventTime = DateTime.now();
+
     if (line.isEmpty) {
-      // 空行表示事件结束
       if (_currentData.isNotEmpty) {
         final event = HapiSseEvent.fromRaw(
           _currentEventType,
           _currentData.toString().trim(),
         );
-        debugPrint('[SSE] Event: ${event.type}');
+        if (event.type == HapiSseEventType.connectionChanged) {
+          final data = event.data;
+          if (data != null && data['data'] is Map) {
+            _subscriptionId =
+                (data['data'] as Map<String, dynamic>)['subscriptionId']
+                    as String?;
+          }
+        }
         _eventController.add(event);
       }
-      // 重置状态
       _currentEventType = 'message';
       _currentData = StringBuffer();
       return;
@@ -271,51 +400,58 @@ class HapiSseService {
     if (line.startsWith('event:')) {
       _currentEventType = line.substring(6).trim();
     } else if (line.startsWith('data:')) {
-      if (_currentData.isNotEmpty) {
-        _currentData.write('\n');
-      }
+      if (_currentData.isNotEmpty) _currentData.write('\n');
       _currentData.write(line.substring(5).trim());
     } else if (line.startsWith('id:')) {
-      // 记录 lastEventId 用于断线续传
       _lastEventId = line.substring(3).trim();
     } else if (line.startsWith('retry:')) {
-      // 使用服务器建议的重连时间
       final retryMs = int.tryParse(line.substring(6).trim());
       if (retryMs != null && retryMs > 0) {
         _serverRetryDelay = Duration(milliseconds: retryMs);
-        debugPrint(
-          '[SSE] Server retry delay: ${_serverRetryDelay!.inMilliseconds}ms',
-        );
       }
-    } else if (line.startsWith(':')) {
-      // 注释，忽略
     }
   }
 
   void _handleError(Object error) {
-    debugPrint('[SSE] Error: $error');
+    final errorStr = error.toString();
+    final isRecoverableError =
+        errorStr.contains('Connection closed') ||
+        errorStr.contains('Connection reset') ||
+        errorStr.contains('Connection refused') ||
+        errorStr.contains('Network is unreachable') ||
+        errorStr.contains('SocketException');
 
+    if (isRecoverableError) {
+      Log.w('SSE', 'Recoverable error: $errorStr');
+    } else {
+      Log.e('SSE', 'Error', error);
+    }
+    _stopHeartbeatCheck();
     _updateState(
       _currentState.copyWith(
         status: HapiConnectionStatus.error,
-        errorMessage: error.toString(),
+        errorMessage: errorStr,
       ),
     );
 
-    _eventController.add(
-      HapiSseEvent(
-        type: HapiSseEventType.error,
-        data: {'error': error.toString()},
-      ),
-    );
-
+    if (!isRecoverableError) {
+      _eventController.add(
+        HapiSseEvent(type: HapiSseEventType.error, data: {'error': errorStr}),
+      );
+    }
     _scheduleReconnect();
   }
 
   void _handleDone() {
-    debugPrint('[SSE] Connection closed');
+    Log.i('SSE', 'Connection closed');
+    _stopHeartbeatCheck();
 
-    if (_currentState.status == HapiConnectionStatus.connected) {
+    final shouldReconnect =
+        _currentState.status == HapiConnectionStatus.connected ||
+        _currentState.status == HapiConnectionStatus.connecting ||
+        _currentState.status == HapiConnectionStatus.reconnecting;
+
+    if (shouldReconnect && _config.enabled) {
       _updateState(
         _currentState.copyWith(status: HapiConnectionStatus.disconnected),
       );
@@ -325,7 +461,7 @@ class HapiSseService {
 
   void _scheduleReconnect() {
     if (_currentState.reconnectAttempts >= _maxReconnectAttempts) {
-      debugPrint('[SSE] Max reconnect attempts reached');
+      Log.e('SSE', 'Max reconnect attempts reached');
       _updateState(
         _currentState.copyWith(
           status: HapiConnectionStatus.error,
@@ -335,26 +471,22 @@ class HapiSseService {
       return;
     }
 
-    // 优先使用服务器建议的重连时间，否则使用指数退避
-    final Duration delay;
-    if (_serverRetryDelay != null) {
-      delay = _serverRetryDelay!;
-    } else {
-      // 指数退避
-      delay = Duration(
-        milliseconds: (_initialReconnectDelay.inMilliseconds *
+    // 指数退避 + 随机抖动 (±25%)，防止 thundering herd
+    final baseDelayMs =
+        _serverRetryDelay?.inMilliseconds ??
+        (_initialReconnectDelay.inMilliseconds *
                 (1 << _currentState.reconnectAttempts))
             .clamp(
               _initialReconnectDelay.inMilliseconds,
               _maxReconnectDelay.inMilliseconds,
-            ),
-      );
-    }
+            );
+    final jitterFactor = 0.75 + Random().nextDouble() * 0.5; // 0.75 ~ 1.25
+    final delay = Duration(milliseconds: (baseDelayMs * jitterFactor).round());
 
-    debugPrint(
-      '[SSE] Reconnecting in ${delay.inSeconds}s (attempt ${_currentState.reconnectAttempts + 1})',
+    Log.i(
+      'SSE',
+      'Reconnecting in ${delay.inSeconds}s (attempt ${_currentState.reconnectAttempts + 1})',
     );
-
     _updateState(
       _currentState.copyWith(
         status: HapiConnectionStatus.reconnecting,
@@ -364,9 +496,7 @@ class HapiSseService {
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () {
-      if (_config.enabled) {
-        _doConnect();
-      }
+      if (_config.enabled) _doConnect();
     });
   }
 
@@ -375,32 +505,47 @@ class HapiSseService {
     _connectionStateController.add(state);
   }
 
-  /// 断开连接
+  void _startHeartbeatCheck() {
+    _stopHeartbeatCheck();
+    _lastEventTime = DateTime.now();
+    _heartbeatTimer = Timer.periodic(_heartbeatCheckInterval, (timer) {
+      final lastEvent = _lastEventTime;
+      if (lastEvent == null) return;
+      final timeSinceLastEvent = DateTime.now().difference(lastEvent);
+      if (timeSinceLastEvent > _heartbeatTimeout) {
+        Log.w('SSE', 'Heartbeat timeout: ${timeSinceLastEvent.inSeconds}s');
+        _handleError(Exception('Heartbeat timeout'));
+      }
+    });
+  }
+
+  void _stopHeartbeatCheck() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _lastEventTime = null;
+  }
+
   void disconnect() {
-    debugPrint('[SSE] Disconnecting...');
+    _stopHeartbeatCheck();
     _reconnectTimer?.cancel();
     _subscription?.cancel();
-    _client?.close();
-    _client = null;
-
+    _cancelToken?.cancel();
+    _dio?.close();
+    _cancelToken = null;
+    _dio = null;
     _updateState(
       const HapiConnectionState(status: HapiConnectionStatus.disconnected),
     );
   }
 
-  /// 重新连接
   Future<void> reconnect() async {
     disconnect();
     await Future.delayed(const Duration(milliseconds: 100));
     await connect();
   }
 
-  /// 重置重连计数并立即重连
-  /// 用于用户手动触发重连（例如达到最大重连次数后）
   Future<void> resetAndReconnect() async {
-    debugPrint('[SSE] Reset and reconnect requested');
     disconnect();
-    // 清除 SSE 断线续传状态，从头开始
     _lastEventId = null;
     _serverRetryDelay = null;
     _updateState(
@@ -413,11 +558,9 @@ class HapiSseService {
     await connect();
   }
 
-  /// 是否已达到最大重连次数
   bool get hasReachedMaxReconnectAttempts =>
       _currentState.reconnectAttempts >= _maxReconnectAttempts;
 
-  /// 释放资源
   void dispose() {
     disconnect();
     _eventController.close();
@@ -425,59 +568,78 @@ class HapiSseService {
   }
 }
 
-/// hapi SSE 服务 Provider
+/// SSE 服务单例 Provider
+///
+/// 注意：使用 keepAlive 防止 Provider 重建导致的连接抖动。
+/// 配置变化时通过 listen 处理，而不是重建整个服务。
 final hapiSseServiceProvider = Provider<HapiSseService?>((ref) {
-  final config = ref.watch(hapiConfigProvider);
-  if (!config.isConfigured) {
-    return null;
-  }
+  // 保持 Provider 存活，防止因依赖变化导致重建
+  ref.keepAlive();
 
-  final service = HapiSseService(config);
+  // 初始读取配置（不使用 watch 避免重建）
+  final config = ref.read(hapiConfigProvider);
+  if (!config.isConfigured) return null;
 
-  // 自动连接（如果已启用）
-  if (config.enabled) {
-    service.connect();
-  }
+  final apiService = ref.read(hapiApiServiceProvider);
+  final service = HapiSseService(config, apiService);
 
-  ref.onDispose(() {
-    service.dispose();
+  // 初始连接
+  if (config.enabled) service.connect();
+
+  // 监听配置变化，动态调整连接状态（而非重建服务）
+  ref.listen<HapiConfig>(hapiConfigProvider, (previous, next) {
+    if (!next.isConfigured) {
+      service.disconnect();
+      return;
+    }
+
+    final wasEnabled = previous?.enabled ?? false;
+    final isEnabled = next.enabled;
+
+    if (isEnabled && !wasEnabled) {
+      // 配置启用，建立连接
+      Log.i('SSE', 'Config enabled, connecting...');
+      service.connect();
+    } else if (!isEnabled && wasEnabled) {
+      // 配置禁用，断开连接
+      Log.i('SSE', 'Config disabled, disconnecting...');
+      service.disconnect();
+    }
+    // URL 变化需要重连
+    else if (previous?.serverUrl != next.serverUrl && isEnabled) {
+      Log.i('SSE', 'Server URL changed, reconnecting...');
+      service.resetAndReconnect();
+    }
   });
 
+  ref.onDispose(() => service.dispose());
   return service;
 });
 
-/// hapi 连接状态 Provider
 final hapiConnectionStateProvider = StreamProvider<HapiConnectionState>((
   ref,
 ) async* {
-  final sseService = ref.watch(hapiSseServiceProvider);
+  // 使用 read 因为 hapiSseServiceProvider 已使用 keepAlive，不会重建
+  final sseService = ref.read(hapiSseServiceProvider);
   if (sseService == null) {
     yield const HapiConnectionState(status: HapiConnectionStatus.disconnected);
     return;
   }
-
-  // 先发送当前状态
   yield sseService.currentState;
-
-  // 然后监听变化
   await for (final state in sseService.connectionState) {
     yield state;
   }
 });
 
-/// hapi SSE 事件流 Provider
 final hapiSseEventsProvider = StreamProvider<HapiSseEvent>((ref) async* {
-  final sseService = ref.watch(hapiSseServiceProvider);
-  if (sseService == null) {
-    return;
-  }
-
+  // 使用 read 因为 hapiSseServiceProvider 已使用 keepAlive，不会重建
+  final sseService = ref.read(hapiSseServiceProvider);
+  if (sseService == null) return;
   await for (final event in sseService.events) {
     yield event;
   }
 });
 
-/// hapi 是否已连接 Provider
 final hapiIsConnectedProvider = Provider<bool>((ref) {
   final connectionState = ref.watch(hapiConnectionStateProvider);
   return connectionState.maybeWhen(

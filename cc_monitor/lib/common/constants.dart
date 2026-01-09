@@ -11,19 +11,40 @@ class AppConstants {
   static const Duration animationNormal = Duration(milliseconds: 300);
   static const Duration animationSlow = Duration(milliseconds: 500);
 
-  // 卡片设计
-  static const double cardBorderRadius = 14.0; // FlClash 风格
-  static const double cardPadding = 20.0; // 增加呼吸感
+  // 响应式断点
+  static const double compactBreakpoint = 600.0;
 
-  // 间距系统
-  static const double titleIconGap = 10.0; // 图标与标题间距
-  static const double contentGap = 6.0; // 内容行间距
-  static const double timestampTopGap = 12.0; // 时间戳上方间距
+  // 卡片设计 - 紧凑风格（桌面端）
+  static const double cardBorderRadius = 12.0;
+  static const double cardPadding = 12.0;
+  static const double cardMarginH = 12.0;
+  static const double cardMarginV = 4.0;
 
-  // 状态标签配置
-  static const double statusLabelPaddingH = 10.0;
-  static const double statusLabelPaddingV = 5.0;
-  static const double statusLabelBorderRadius = 12.0;
+  // 卡片设计 - 超紧凑风格（移动端）
+  static const double cardBorderRadiusCompact = 10.0;
+  static const double cardPaddingCompact = 10.0;
+  static const double cardMarginHCompact = 8.0;
+  static const double cardMarginVCompact = 3.0;
+
+  // 间距系统 - 紧凑
+  static const double titleIconGap = 8.0;
+  static const double contentGap = 4.0;
+  static const double timestampTopGap = 8.0;
+
+  // 间距系统 - 超紧凑（移动端）
+  static const double titleIconGapCompact = 6.0;
+  static const double contentGapCompact = 3.0;
+  static const double timestampTopGapCompact = 6.0;
+
+  // 状态标签配置 - 紧凑
+  static const double statusLabelPaddingH = 8.0;
+  static const double statusLabelPaddingV = 3.0;
+  static const double statusLabelBorderRadius = 10.0;
+
+  // 状态标签配置 - 超紧凑（移动端）
+  static const double statusLabelPaddingHCompact = 6.0;
+  static const double statusLabelPaddingVCompact = 2.0;
+  static const double statusLabelBorderRadiusCompact = 8.0;
 
   // Firestore 集合名称
   static const String sessionsCollection = 'sessions';

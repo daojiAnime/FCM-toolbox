@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart';
+import '../../common/logger.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,9 +45,13 @@ class HapiConfigNotifier extends StateNotifier<HapiConfig> {
   SharedPreferences? _prefs;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
+  // 标记 SecureStorage 是否可用（macOS 无签名时不可用）
+  bool _secureStorageAvailable = true;
+
   // 存储键
   static const _keyServerUrl = 'hapi_server_url';
   static const _keyApiToken = 'hapi_api_token';
+  static const _keyApiTokenFallback = 'hapi_api_token_fallback'; // 回退存储
   static const _keyEnabled = 'hapi_enabled';
 
   /// 初始化配置
@@ -62,12 +67,22 @@ class HapiConfigNotifier extends StateNotifier<HapiConfig> {
     final serverUrl = _prefs!.getString(_keyServerUrl) ?? '';
     final enabled = _prefs!.getBool(_keyEnabled) ?? false;
 
-    // Token 从安全存储读取
+    // Token 优先从安全存储读取，失败或为空则从 SharedPreferences 回退读取
     String apiToken = '';
     try {
       apiToken = await _secureStorage.read(key: _keyApiToken) ?? '';
+      _secureStorageAvailable = true;
     } catch (e) {
-      debugPrint('Failed to read hapi token from secure storage: $e');
+      Log.e('HapiCfg', 'SecureStorage not available: $e');
+      _secureStorageAvailable = false;
+    }
+
+    // 如果 SecureStorage 为空，尝试从 fallback 读取
+    if (apiToken.isEmpty) {
+      final fallbackToken = _prefs!.getString(_keyApiTokenFallback);
+      if (fallbackToken != null && fallbackToken.isNotEmpty) {
+        apiToken = fallbackToken;
+      }
     }
 
     state = HapiConfig(
@@ -75,8 +90,6 @@ class HapiConfigNotifier extends StateNotifier<HapiConfig> {
       apiToken: apiToken,
       enabled: enabled,
     );
-
-    debugPrint('HapiConfig loaded: ${state.toString()}');
   }
 
   /// 保存服务器地址
@@ -87,14 +100,27 @@ class HapiConfigNotifier extends StateNotifier<HapiConfig> {
     await _prefs?.setString(_keyServerUrl, cleanUrl);
   }
 
-  /// 保存 API Token（安全存储）
+  /// 保存 API Token（优先安全存储，失败则回退到 SharedPreferences）
   Future<void> setApiToken(String token) async {
     state = state.copyWith(apiToken: token);
-    try {
-      await _secureStorage.write(key: _keyApiToken, value: token);
-    } catch (e) {
-      debugPrint('Failed to save hapi token to secure storage: $e');
+
+    if (_secureStorageAvailable) {
+      try {
+        await _secureStorage.write(key: _keyApiToken, value: token);
+        // 成功后清理回退存储
+        await _prefs?.remove(_keyApiTokenFallback);
+        return;
+      } catch (e) {
+        Log.w(
+          'HapiCfg',
+          'Failed to save to secure storage, using fallback: $e',
+        );
+        _secureStorageAvailable = false;
+      }
     }
+
+    // 回退：存储到 SharedPreferences（注意：安全性较低，仅用于开发测试）
+    await _prefs?.setString(_keyApiTokenFallback, token);
   }
 
   /// 设置是否启用
@@ -121,10 +147,11 @@ class HapiConfigNotifier extends StateNotifier<HapiConfig> {
     state = const HapiConfig();
     await _prefs?.remove(_keyServerUrl);
     await _prefs?.remove(_keyEnabled);
+    await _prefs?.remove(_keyApiTokenFallback);
     try {
       await _secureStorage.delete(key: _keyApiToken);
     } catch (e) {
-      debugPrint('Failed to delete hapi token from secure storage: $e');
+      Log.w('HapiCfg', 'Failed to delete token: $e');
     }
   }
 }

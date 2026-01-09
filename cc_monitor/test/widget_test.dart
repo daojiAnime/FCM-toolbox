@@ -4,11 +4,7 @@ import 'package:cc_monitor/app.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const ProviderScope(
-        child: CCMonitorApp(),
-      ),
-    );
+    await tester.pumpWidget(const ProviderScope(child: CCMonitorApp()));
 
     expect(find.text('CC Monitor'), findsOneWidget);
   });

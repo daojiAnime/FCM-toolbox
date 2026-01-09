@@ -51,6 +51,7 @@ class _MachinesPageState extends ConsumerState<MachinesPage> {
       floatingActionButton:
           hapiConfig.enabled && isConnected
               ? FloatingActionButton.extended(
+                heroTag: 'machines_new_session',
                 onPressed: () => _showSpawnDialog(context),
                 icon: const Icon(Icons.add),
                 label: const Text('新建会话'),
@@ -189,12 +190,12 @@ class _MachinesPageState extends ConsumerState<MachinesPage> {
     final offlineMachines = machines.where((m) => !m.isOnline).toList();
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       children: [
         // 在线机器
         if (onlineMachines.isNotEmpty) ...[
           _buildSectionHeader(context, '在线', onlineMachines.length),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           ...onlineMachines.asMap().entries.map((entry) {
             return _MachineCard(
               machine: entry.value,
@@ -208,9 +209,9 @@ class _MachinesPageState extends ConsumerState<MachinesPage> {
 
         // 离线机器
         if (offlineMachines.isNotEmpty) ...[
-          if (onlineMachines.isNotEmpty) const SizedBox(height: 24),
+          if (onlineMachines.isNotEmpty) const SizedBox(height: 16),
           _buildSectionHeader(context, '离线', offlineMachines.length),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           ...offlineMachines.asMap().entries.map((entry) {
             return _MachineCard(
               machine: entry.value,
@@ -227,32 +228,38 @@ class _MachinesPageState extends ConsumerState<MachinesPage> {
     );
   }
 
+  /// 紧凑的分组标题
   Widget _buildSectionHeader(BuildContext context, String title, int count) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '$count',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w500,
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '$count',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -301,7 +308,7 @@ class _MachinesPageState extends ConsumerState<MachinesPage> {
   }
 }
 
-/// 机器卡片
+/// 机器卡片 - 紧凑风格，显示更多信息
 class _MachineCard extends StatelessWidget {
   const _MachineCard({required this.machine, this.onSpawn});
 
@@ -312,85 +319,94 @@ class _MachineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isOnline = machine.isOnline;
+    final statusColor =
+        isOnline ? MessageColors.complete : theme.colorScheme.outline;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: 0.08),
+          width: 1,
+        ),
+      ),
       child: InkWell(
         onTap: onSpawn,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              // 状态图标
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color:
-                      isOnline
-                          ? MessageColors.complete.withValues(alpha: 0.1)
-                          : theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _getPlatformIcon(machine.platform),
-                  color:
-                      isOnline
-                          ? MessageColors.complete
-                          : theme.colorScheme.outline,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
+              // 平台图标 + 状态指示
+              _buildPlatformIcon(theme, isOnline, statusColor),
+              const SizedBox(width: 12),
 
-              // 机器信息
+              // 主信息区
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 第一行：名称 + 状态标签
                     Row(
                       children: [
                         Expanded(
                           child: Text(
                             machine.name,
-                            style: theme.textTheme.titleMedium?.copyWith(
+                            style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // 在线状态指示器
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color:
-                                isOnline
-                                    ? MessageColors.complete
-                                    : theme.colorScheme.outline,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
+                        _buildStatusBadge(theme, isOnline, statusColor),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      machine.hostname ?? machine.id,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+
+                    // 第二行：平台 + 端口 + CLI 版本
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        _buildInfoChip(
+                          theme,
+                          Icons.memory_outlined,
+                          machine.platformDisplayName,
+                        ),
+                        if (machine.httpPort != null)
+                          _buildInfoChip(
+                            theme,
+                            Icons.lan_outlined,
+                            ':${machine.httpPort}',
+                          ),
+                        if (machine.cliVersion != null)
+                          _buildInfoChip(
+                            theme,
+                            Icons.code_outlined,
+                            machine.cliVersion!,
+                          ),
+                        if (machine.daemonStatus != null &&
+                            machine.daemonStatus != 'running')
+                          _buildInfoChip(
+                            theme,
+                            Icons.settings_outlined,
+                            machine.daemonStatus!,
+                            isWarning: true,
+                          ),
+                      ],
                     ),
-                    if (machine.lastSeenAt != null && !isOnline) ...[
-                      const SizedBox(height: 2),
+
+                    // 离线时显示上次在线时间
+                    if (!isOnline && machine.lastSeenAt != null) ...[
+                      const SizedBox(height: 4),
                       Text(
-                        '上次在线: ${_formatLastSeen(machine.lastSeenAt!)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        '上次在线 ${_formatLastSeen(machine.lastSeenAt!)}',
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.outline,
-                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -399,20 +415,106 @@ class _MachineCard extends StatelessWidget {
               ),
 
               // 启动按钮
-              if (isOnline && onSpawn != null)
-                IconButton(
-                  icon: const Icon(Icons.play_arrow),
+              if (isOnline && onSpawn != null) ...[
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
                   onPressed: onSpawn,
                   tooltip: '启动会话',
                   style: IconButton.styleFrom(
+                    minimumSize: const Size(36, 36),
+                    padding: EdgeInsets.zero,
                     backgroundColor: theme.colorScheme.primaryContainer,
                     foregroundColor: theme.colorScheme.onPrimaryContainer,
                   ),
                 ),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// 平台图标带状态环
+  Widget _buildPlatformIcon(ThemeData theme, bool isOnline, Color statusColor) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Icon(
+        _getPlatformIcon(machine.platform),
+        color: statusColor,
+        size: 20,
+      ),
+    );
+  }
+
+  /// 在线状态标签
+  Widget _buildStatusBadge(ThemeData theme, bool isOnline, Color statusColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isOnline ? '在线' : '离线',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: statusColor,
+              fontWeight: FontWeight.w500,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 信息标签
+  Widget _buildInfoChip(
+    ThemeData theme,
+    IconData icon,
+    String text, {
+    bool isWarning = false,
+  }) {
+    final color =
+        isWarning
+            ? theme.colorScheme.error
+            : theme.colorScheme.onSurface.withValues(alpha: 0.6);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 3),
+        Text(
+          text,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: color,
+            fontSize: 11,
+          ),
+        ),
+      ],
     );
   }
 
@@ -510,102 +612,197 @@ class _SpawnSessionDialog extends ConsumerStatefulWidget {
 
 class _SpawnSessionDialogState extends ConsumerState<_SpawnSessionDialog> {
   final _projectPathController = TextEditingController();
-  String _selectedModel = 'sonnet';
+  final _worktreeNameController = TextEditingController();
+  String _selectedAgent = 'claude';
+  bool _yoloMode = false;
+  String? _sessionType;
+  bool _showAdvanced = false;
 
-  final List<(String, String)> _models = [
-    ('sonnet', 'Claude Sonnet (推荐)'),
-    ('opus', 'Claude Opus'),
-    ('haiku', 'Claude Haiku'),
+  static const _agents = [
+    ('claude', 'Claude Code', 'Anthropic Claude（推荐）'),
+    ('codex', 'Codex', 'OpenAI Codex'),
+    ('gemini', 'Gemini', 'Google Gemini'),
+  ];
+
+  /// 会话类型 (与 Web 版 @hapi/protocol 对齐)
+  static const _sessionTypes = [
+    (null, '默认', '标准交互模式'),
+    ('plan', '计划模式', '仅规划不执行'),
+    ('acceptEdits', '自动编辑', '自动批准文件修改'),
+    ('bypassPermissions', '完全自动', '自动批准所有操作'),
   ];
 
   @override
   void dispose() {
     _projectPathController.dispose();
+    _worktreeNameController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final spawnState = ref.watch(spawnSessionProvider);
+    final theme = Theme.of(context);
 
     return AlertDialog(
       title: Text('在 ${widget.machine.name} 上启动会话'),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 项目路径输入
-            TextField(
-              controller: _projectPathController,
-              decoration: const InputDecoration(
-                labelText: '项目路径（可选）',
-                hintText: '/path/to/project',
-                prefixIcon: Icon(Icons.folder_outlined),
-                border: OutlineInputBorder(),
+        child: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 项目路径输入
+              TextField(
+                controller: _projectPathController,
+                decoration: const InputDecoration(
+                  labelText: '项目路径（可选）',
+                  hintText: '/path/to/project',
+                  prefixIcon: Icon(Icons.folder_outlined),
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // 模型选择
-            Text(
-              '模型',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
+              // Agent 选择
+              Text(
+                '代理',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            RadioGroup<String>(
-              groupValue: _selectedModel,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _selectedModel = value);
-                }
-              },
-              child: Column(
-                children:
-                    _models.map((model) {
-                      return RadioListTile<String>(
-                        value: model.$1,
-                        title: Text(model.$2),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
+              const SizedBox(height: 8),
+              SegmentedButton<String>(
+                segments:
+                    _agents.map((a) {
+                      return ButtonSegment(
+                        value: a.$1,
+                        label: Text(a.$2),
+                        tooltip: a.$3,
                       );
                     }).toList(),
+                selected: {_selectedAgent},
+                onSelectionChanged: (values) {
+                  setState(() => _selectedAgent = values.first);
+                },
               ),
-            ),
-
-            // 错误提示
-            if (spawnState.error != null) ...[
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                      size: 20,
+
+              // 快捷选项
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilterChip(
+                    selected: _yoloMode,
+                    label: const Text('YOLO 模式'),
+                    avatar: Icon(
+                      Icons.flash_on,
+                      size: 18,
+                      color:
+                          _yoloMode
+                              ? theme.colorScheme.onSecondaryContainer
+                              : null,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        spawnState.error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                          fontSize: 13,
+                    tooltip: '跳过所有确认',
+                    onSelected: (v) => setState(() => _yoloMode = v),
+                  ),
+                ],
+              ),
+
+              // 高级选项展开
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () => setState(() => _showAdvanced = !_showAdvanced),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _showAdvanced ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '高级选项',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.primary,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
+
+              // 高级选项内容
+              if (_showAdvanced) ...[
+                const SizedBox(height: 8),
+                // 会话类型
+                DropdownButtonFormField<String?>(
+                  initialValue: _sessionType,
+                  decoration: const InputDecoration(
+                    labelText: '会话类型',
+                    border: OutlineInputBorder(),
+                  ),
+                  items:
+                      _sessionTypes.map((t) {
+                        return DropdownMenuItem(
+                          value: t.$1,
+                          child: Text('${t.$2} - ${t.$3}'),
+                        );
+                      }).toList(),
+                  onChanged: (v) => setState(() => _sessionType = v),
+                ),
+                const SizedBox(height: 12),
+
+                // Worktree 名称
+                TextField(
+                  controller: _worktreeNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Worktree 名称（可选）',
+                    hintText: 'feature-branch',
+                    prefixIcon: Icon(Icons.account_tree),
+                    border: OutlineInputBorder(),
+                    helperText: '创建 Git worktree 分支',
+                  ),
+                ),
+              ],
+
+              // 错误提示
+              if (spawnState.error != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: theme.colorScheme.onErrorContainer,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          spawnState.error!,
+                          style: TextStyle(
+                            color: theme.colorScheme.onErrorContainer,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
       actions: [
@@ -632,11 +829,15 @@ class _SpawnSessionDialogState extends ConsumerState<_SpawnSessionDialog> {
   Future<void> _spawnSession() async {
     final notifier = ref.read(spawnSessionProvider.notifier);
     final projectPath = _projectPathController.text.trim();
+    final worktreeName = _worktreeNameController.text.trim();
 
     final success = await notifier.spawnSession(
       machineId: widget.machine.id,
       projectPath: projectPath.isNotEmpty ? projectPath : null,
-      model: _selectedModel,
+      agent: _selectedAgent,
+      yolo: _yoloMode ? true : null,
+      sessionType: _sessionType,
+      worktreeName: worktreeName.isNotEmpty ? worktreeName : null,
     );
 
     if (success && mounted) {

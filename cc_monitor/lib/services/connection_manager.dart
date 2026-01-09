@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../common/logger.dart';
 import 'hapi/hapi_config_service.dart';
 import 'hapi/hapi_sse_service.dart';
 import 'firestore_message_service.dart';
@@ -77,10 +77,13 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
   final Ref _ref;
   StreamSubscription? _connectivitySubscription;
   Timer? _fallbackTimer;
+  DateTime? _lastSwitchTime;
   // 注：ref.listen 在 Riverpod 中会自动管理生命周期，无需手动取消
 
   // 降级后尝试恢复 hapi 的间隔
   static const _recoveryCheckInterval = Duration(minutes: 2);
+  // 切换防抖时间（避免频繁切换）
+  static const _switchDebounceTime = Duration(seconds: 30);
 
   void _init() {
     // 监听网络连接状态
@@ -107,47 +110,50 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
 
   Future<void> _checkInitialConnectivity() async {
     try {
+      // 延迟初始网络检查，让 SSE 有时间完成初始化
+      // 避免与 SSE 初始连接产生竞态条件
+      await Future.delayed(const Duration(milliseconds: 500));
       final result = await Connectivity().checkConnectivity();
       _onConnectivityChanged(result);
     } catch (e) {
-      debugPrint('[ConnectionManager] Failed to check connectivity: $e');
+      Log.e('ConnMgr', 'Failed to check connectivity', e);
     }
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {
     final isOnline =
         results.isNotEmpty && !results.contains(ConnectivityResult.none);
+    final wasOnline = state.isOnline;
 
-    debugPrint(
-      '[ConnectionManager] Connectivity changed: $results, online: $isOnline',
+    Log.i(
+      'ConnMgr',
+      'Connectivity changed: $results, online: $isOnline (was: $wasOnline)',
     );
 
     state = state.copyWith(isOnline: isOnline);
 
-    if (isOnline) {
+    // 只有当网络状态真正变化时才采取行动
+    if (isOnline && !wasOnline) {
       // 网络恢复，尝试重新连接 hapi
       _attemptHapiRecovery();
-    } else {
+    } else if (!isOnline && wasOnline) {
       // 网络断开，切换到离线模式
       _switchToFallback('网络已断开');
     }
   }
 
   void _onHapiConfigChanged(HapiConfig config) {
-    debugPrint(
-      '[ConnectionManager] hapi config changed: enabled=${config.enabled}',
-    );
+    Log.i('ConnMgr', 'hapi config changed: enabled=${config.enabled}');
     _determineDataSource();
   }
 
   void _onHapiConnectionStateChanged(HapiConnectionState hapiState) {
-    debugPrint('[ConnectionManager] hapi state changed: ${hapiState.status}');
-
     final wasConnected = state.hapiConnected;
     final isConnected = hapiState.isConnected;
     final isReconnecting =
         hapiState.status == HapiConnectionStatus.reconnecting;
 
+    // 更新连接状态
     state = state.copyWith(
       hapiConnected: isConnected,
       hapiReconnecting: isReconnecting,
@@ -155,8 +161,19 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
     );
 
     if (isConnected && !wasConnected) {
-      // hapi 连接成功，切换回 hapi 模式
-      _switchToHapi();
+      // hapi 连接成功，立即更新数据源为 hapi 模式
+      // 避免 _switchToHapi 的防抖逻辑导致状态不同步
+      final hapiConfig = _ref.read(hapiConfigProvider);
+      if (hapiConfig.isConfigured && hapiConfig.enabled) {
+        Log.i('ConnMgr', 'SSE connected, switching to hapi mode');
+        _fallbackTimer?.cancel();
+        state = state.copyWith(
+          dataSource: DataSourceType.hapiPrimary,
+          fallbackReason: null,
+        );
+        // 异步停止 Firestore 监听
+        _stopFirestoreListening();
+      }
     } else if (!isConnected && wasConnected) {
       // hapi 连接断开
       if (!isReconnecting) {
@@ -177,9 +194,7 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
         dataSource: DataSourceType.firebaseOnly,
         fallbackReason: null,
       );
-      debugPrint(
-        '[ConnectionManager] Using Firebase only (hapi not configured)',
-      );
+      Log.i('ConnMgr', 'Using Firebase only (hapi not configured)');
       return;
     }
 
@@ -189,53 +204,63 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
         dataSource: DataSourceType.hapiPrimary,
         fallbackReason: null,
       );
-      debugPrint('[ConnectionManager] Using hapi as primary');
+      Log.i('ConnMgr', 'Using hapi as primary');
     } else {
       // hapi 配置了但未连接
       state = state.copyWith(
         dataSource: DataSourceType.firebaseFallback,
         fallbackReason: state.lastHapiError ?? '等待 hapi 连接',
       );
-      debugPrint('[ConnectionManager] Using Firebase fallback');
+      Log.i('ConnMgr', 'Using Firebase fallback');
       _scheduleRecoveryCheck();
     }
   }
 
-  void _switchToHapi() {
-    final hapiConfig = _ref.read(hapiConfigProvider);
-    if (!hapiConfig.isConfigured || !hapiConfig.enabled) return;
-
-    debugPrint('[ConnectionManager] Switching to hapi');
-    _fallbackTimer?.cancel();
-
-    state = state.copyWith(
-      dataSource: DataSourceType.hapiPrimary,
-      fallbackReason: null,
-    );
-
-    // 停止 Firestore 实时监听（节省资源）
-    _stopFirestoreListening();
-  }
-
-  void _switchToFallback(String reason) {
+  Future<void> _switchToFallback(String reason) async {
     final hapiConfig = _ref.read(hapiConfigProvider);
     if (!hapiConfig.isConfigured || !hapiConfig.enabled) {
       // hapi 本来就没启用，不需要降级
       return;
     }
 
-    debugPrint('[ConnectionManager] Switching to Firebase fallback: $reason');
+    // 防抖检查
+    if (_lastSwitchTime != null) {
+      final timeSinceLastSwitch = DateTime.now().difference(_lastSwitchTime!);
+      if (timeSinceLastSwitch < _switchDebounceTime) {
+        Log.w('ConnMgr', '切换请求被防抖拒绝 (距上次切换 ${timeSinceLastSwitch.inSeconds}秒)');
+        return;
+      }
+    }
 
-    state = state.copyWith(
-      dataSource: DataSourceType.firebaseFallback,
-      fallbackReason: reason,
-    );
+    Log.i('ConnMgr', '开始切换到 Firebase 降级模式: $reason');
 
-    // 启动 Firestore 实时监听
-    _startFirestoreListening();
+    try {
+      // 步骤 1: 先启动 Firestore 实时监听
+      await _startFirestoreListening();
+      Log.i('ConnMgr', 'Firestore 监听已启动');
 
-    // 安排定期恢复检查
-    _scheduleRecoveryCheck();
+      // 步骤 2: 等待短暂时间确保 Firestore 监听已建立
+      await Future.delayed(const Duration(seconds: 1));
+      Log.i('ConnMgr', 'Firestore 监听已稳定');
+
+      // 步骤 3: 更新状态为降级模式
+      state = state.copyWith(
+        dataSource: DataSourceType.firebaseFallback,
+        fallbackReason: reason,
+      );
+
+      // 步骤 4: 等待短暂过渡期（确保不会丢失消息）
+      await Future.delayed(const Duration(seconds: 1));
+
+      _lastSwitchTime = DateTime.now();
+      Log.i('ConnMgr', '✅ 成功切换到 Firebase 降级模式');
+
+      // 安排定期恢复检查
+      _scheduleRecoveryCheck();
+    } catch (e) {
+      Log.e('ConnMgr', '❌ 切换到 Firebase 失败', e);
+      // 切换失败，保持当前状态
+    }
   }
 
   void _scheduleRecoveryCheck() {
@@ -252,19 +277,26 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
     if (!hapiConfig.isConfigured || !hapiConfig.enabled) return;
 
     final sseService = _ref.read(hapiSseServiceProvider);
-    if (sseService != null && !sseService.isConnected) {
-      debugPrint('[ConnectionManager] Attempting hapi recovery...');
+    if (sseService == null) return;
+
+    // 只有在完全断开且不在重连过程中时才尝试恢复
+    // 避免与正在进行的连接产生竞态条件
+    final currentStatus = sseService.currentState.status;
+    if (currentStatus == HapiConnectionStatus.disconnected ||
+        currentStatus == HapiConnectionStatus.error) {
+      Log.i('ConnMgr', 'Attempting hapi recovery (status: $currentStatus)...');
       sseService.reconnect();
     }
   }
 
-  void _startFirestoreListening() {
+  Future<void> _startFirestoreListening() async {
     try {
       final firestoreService = _ref.read(firestoreMessageServiceProvider);
-      firestoreService.initialize();
-      debugPrint('[ConnectionManager] Started Firestore listening');
+      await firestoreService.initialize();
+      Log.i('ConnMgr', 'Started Firestore listening');
     } catch (e) {
-      debugPrint('[ConnectionManager] Failed to start Firestore: $e');
+      Log.e('ConnMgr', 'Failed to start Firestore', e);
+      rethrow;
     }
   }
 
@@ -272,9 +304,9 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
     try {
       final firestoreService = _ref.read(firestoreMessageServiceProvider);
       firestoreService.dispose();
-      debugPrint('[ConnectionManager] Stopped Firestore listening');
+      Log.i('ConnMgr', 'Stopped Firestore listening');
     } catch (e) {
-      debugPrint('[ConnectionManager] Failed to stop Firestore: $e');
+      Log.e('ConnMgr', 'Failed to stop Firestore', e);
     }
   }
 

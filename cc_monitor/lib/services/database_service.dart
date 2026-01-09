@@ -1,8 +1,5 @@
-import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'database_service.g.dart';
@@ -188,12 +185,17 @@ class AppDatabase extends _$AppDatabase {
 // 数据库连接
 // ============================================================
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'cc_monitor.db'));
-    return NativeDatabase.createInBackground(file);
-  });
+/// 使用 drift_flutter 的跨平台数据库连接
+/// 自动处理 Native (iOS/Android/macOS/Linux/Windows) 和 Web 平台
+QueryExecutor _openConnection() {
+  return driftDatabase(
+    name: 'cc_monitor',
+    native: const DriftNativeOptions(shareAcrossIsolates: true),
+    web: DriftWebOptions(
+      sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+      driftWorker: Uri.parse('drift_worker.js'),
+    ),
+  );
 }
 
 // ============================================================

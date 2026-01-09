@@ -167,3 +167,18 @@ obj/
 # Firebase service account (sensitive)
 service-account.json
 **/service-account.json
+
+# Serena (AI code assistant)
+.serena/
+
+# Git worktrees
+.worktrees/
+
+# Claude Code configuration
+CLAUDE.md
+
+# Test files
+msg.json
+
+# Web project (separate repository, not cc_monitor/web)
+/web/

@@ -1,6 +1,8 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// 重新导出工具类,便于现有代码使用
+export '../utils/timing/timing.dart';
 
 /// 缓存条目
 class CacheEntry<T> {
@@ -39,11 +41,9 @@ class CacheService {
 
     if (entry.isExpired) {
       _cache.remove(key);
-      debugPrint('[Cache] Entry expired: $key');
       return null;
     }
 
-    debugPrint('[Cache] Hit: $key (age: ${entry.age.inSeconds}s)');
     return entry.data as T;
   }
 
@@ -66,20 +66,17 @@ class CacheService {
       expiresAt: DateTime.now().add(effectiveTtl),
     );
 
-    debugPrint('[Cache] Set: $key (ttl: ${effectiveTtl.inSeconds}s)');
     _scheduleCleanup();
   }
 
   /// 删除缓存条目
   void remove(String key) {
     _cache.remove(key);
-    debugPrint('[Cache] Removed: $key');
   }
 
   /// 清除所有缓存
   void clear() {
     _cache.clear();
-    debugPrint('[Cache] Cleared all entries');
   }
 
   /// 清除匹配前缀的缓存
@@ -89,9 +86,6 @@ class CacheService {
     for (final key in keysToRemove) {
       _cache.remove(key);
     }
-    debugPrint(
-      '[Cache] Cleared ${keysToRemove.length} entries with prefix: $prefix',
-    );
   }
 
   /// 获取或设置缓存（如果不存在则调用 factory 创建）
@@ -119,10 +113,6 @@ class CacheService {
     for (final key in expiredKeys) {
       _cache.remove(key);
     }
-
-    if (expiredKeys.isNotEmpty) {
-      debugPrint('[Cache] Cleaned up ${expiredKeys.length} expired entries');
-    }
   }
 
   /// 驱逐最旧的条目
@@ -141,7 +131,6 @@ class CacheService {
 
     if (oldestKey != null) {
       _cache.remove(oldestKey);
-      debugPrint('[Cache] Evicted oldest entry: $oldestKey');
     }
   }
 
@@ -183,131 +172,6 @@ class CacheStats {
   final int expiredCount;
 
   double get usagePercent => entryCount / maxEntries * 100;
-}
-
-/// 防抖器
-class Debouncer {
-  Debouncer({this.delay = const Duration(milliseconds: 300)});
-
-  final Duration delay;
-  Timer? _timer;
-
-  /// 执行防抖操作
-  void run(VoidCallback action) {
-    _timer?.cancel();
-    _timer = Timer(delay, action);
-  }
-
-  /// 立即执行并取消待处理的操作
-  void runNow(VoidCallback action) {
-    _timer?.cancel();
-    action();
-  }
-
-  /// 取消待处理的操作
-  void cancel() {
-    _timer?.cancel();
-  }
-
-  /// 释放资源
-  void dispose() {
-    _timer?.cancel();
-  }
-}
-
-/// 节流器
-class Throttler {
-  Throttler({this.interval = const Duration(milliseconds: 100)});
-
-  final Duration interval;
-  DateTime? _lastRun;
-  Timer? _timer;
-  VoidCallback? _pendingAction;
-
-  /// 执行节流操作
-  void run(VoidCallback action) {
-    final now = DateTime.now();
-
-    if (_lastRun == null || now.difference(_lastRun!) >= interval) {
-      // 可以立即执行
-      _lastRun = now;
-      action();
-    } else {
-      // 保存待执行的操作
-      _pendingAction = action;
-      _timer?.cancel();
-      _timer = Timer(interval - now.difference(_lastRun!), () {
-        _lastRun = DateTime.now();
-        _pendingAction?.call();
-        _pendingAction = null;
-      });
-    }
-  }
-
-  /// 释放资源
-  void dispose() {
-    _timer?.cancel();
-  }
-}
-
-/// 批量更新收集器
-/// 收集多个更新操作，批量执行以减少重绘
-class BatchUpdater<T> {
-  BatchUpdater({
-    required this.onFlush,
-    this.maxBatchSize = 50,
-    this.flushDelay = const Duration(milliseconds: 100),
-  });
-
-  final void Function(List<T> items) onFlush;
-  final int maxBatchSize;
-  final Duration flushDelay;
-
-  final List<T> _pendingItems = [];
-  Timer? _flushTimer;
-
-  /// 添加项目到批次
-  void add(T item) {
-    _pendingItems.add(item);
-
-    if (_pendingItems.length >= maxBatchSize) {
-      // 批次已满，立即刷新
-      flush();
-    } else {
-      // 延迟刷新
-      _scheduleFlush();
-    }
-  }
-
-  /// 添加多个项目
-  void addAll(Iterable<T> items) {
-    for (final item in items) {
-      add(item);
-    }
-  }
-
-  /// 立即刷新所有待处理项目
-  void flush() {
-    if (_pendingItems.isEmpty) return;
-
-    _flushTimer?.cancel();
-    final items = List<T>.from(_pendingItems);
-    _pendingItems.clear();
-
-    debugPrint('[BatchUpdater] Flushing ${items.length} items');
-    onFlush(items);
-  }
-
-  void _scheduleFlush() {
-    _flushTimer?.cancel();
-    _flushTimer = Timer(flushDelay, flush);
-  }
-
-  /// 释放资源
-  void dispose() {
-    flush(); // 确保所有待处理项目都被处理
-    _flushTimer?.cancel();
-  }
 }
 
 /// 缓存服务 Provider
