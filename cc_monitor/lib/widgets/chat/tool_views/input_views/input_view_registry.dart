@@ -13,6 +13,11 @@ import 'todo_write_input_view.dart';
 import 'ask_question_input_view.dart';
 import 'exit_plan_input_view.dart';
 import 'generic_input_view.dart';
+import 'codex_diff_input_view.dart';
+import 'codex_patch_input_view.dart';
+import 'web_fetch_input_view.dart';
+import 'web_search_input_view.dart';
+import 'notebook_edit_input_view.dart';
 
 /// Input 视图构建器类型
 typedef InputViewBuilder =
@@ -44,6 +49,11 @@ class InputViewRegistry {
     'ask_user_question': AskQuestionInputView.build,
     'ExitPlanMode': ExitPlanInputView.build,
     'exit_plan_mode': ExitPlanInputView.build,
+    'CodexDiff': CodexDiffInputView.build,
+    'CodexPatch': CodexPatchInputView.build,
+    'WebFetch': WebFetchInputView.build,
+    'WebSearch': WebSearchInputView.build,
+    'NotebookEdit': NotebookEditInputView.build,
   };
 
   /// 构建 Input 视图

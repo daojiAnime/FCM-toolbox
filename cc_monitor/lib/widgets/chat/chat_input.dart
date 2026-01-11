@@ -156,6 +156,7 @@ class ChatInput extends ConsumerStatefulWidget {
     this.hasPendingPermission = false,
     this.permissionMode,
     this.onPermissionModeChange,
+    this.isSessionCompleted = false,
   });
 
   final void Function(String message) onSend;
@@ -193,6 +194,9 @@ class ChatInput extends ConsumerStatefulWidget {
 
   /// 权限模式切换回调 (Shift+Tab 快捷键)
   final void Function(String mode)? onPermissionModeChange;
+
+  /// 会话是否已结束 (用于强制显示 offline 状态)
+  final bool isSessionCompleted;
 
   @override
   ConsumerState<ChatInput> createState() => _ChatInputState();
@@ -428,8 +432,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
   /// 注意：命令导航由 RawAutocomplete 内部处理
   KeyEventResult _handleKeyEvent(KeyEvent event) {
     // 处理按下和长按重复事件
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent)
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
+    }
 
     // Escape 键：当会话运行中时触发中止
     // 注意：RawAutocomplete 会先处理 Escape 关闭菜单
@@ -537,9 +542,10 @@ class _ChatInputState extends ConsumerState<ChatInput>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     final connectionStateAsync = ref.watch(hapiConnectionStateProvider);
-    // 当禁用时（只读模式）强制显示 offline
+    // 当禁用时（只读模式）或会话已结束时强制显示 offline
     final isConnected =
         widget.enabled &&
+        !widget.isSessionCompleted &&
         connectionStateAsync.maybeWhen(
           data: (state) => state.isConnected,
           orElse: () => false,
@@ -583,8 +589,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
                       // 清除 continue 提示
                       if (text.isNotEmpty && _showContinueHint) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted)
+                          if (mounted) {
                             setState(() => _showContinueHint = false);
+                          }
                         });
                       }
                       // 只在 / 开头时显示命令列表

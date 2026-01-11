@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/hapi/hapi.dart';
 import 'hapi_config_service.dart';
-import '../error_recovery_service.dart';
+import '../error_recovery_strategy.dart';
 import '../cache_service.dart';
 import 'api/api.dart';
 
@@ -14,10 +14,10 @@ export 'api/api.dart';
 class HapiApiService {
   HapiApiService(
     HapiConfig config, [
-    ErrorRecoveryService? errorRecoveryService,
+    ErrorRecoveryStrategy? recoveryStrategy,
     CacheService? cacheService,
   ]) {
-    _client = HapiApiClient(config, errorRecoveryService, cacheService);
+    _client = HapiApiClient(config, recoveryStrategy, cacheService);
     _sessionApi = SessionApi(_client);
     _machineApi = MachineApi(_client);
     _permissionApi = PermissionApi(_client);
@@ -175,18 +175,6 @@ class HapiApiService {
     decision: decision,
   );
 
-  /// 响应权限请求 (兼容方法)
-  @Deprecated('Use approvePermission or denyPermission instead')
-  Future<bool> respondPermission({
-    required String sessionId,
-    required String requestId,
-    required bool approved,
-  }) => _permissionApi.respondPermission(
-    sessionId: sessionId,
-    requestId: requestId,
-    approved: approved,
-  );
-
   // ==================== File API ====================
 
   /// 获取会话文件列表
@@ -223,11 +211,6 @@ class HapiApiService {
     bool staged = false,
   }) => _fileApi.getFileDiff(sessionId, path, staged: staged);
 
-  /// 获取会话 Git Diff (兼容方法)
-  @Deprecated('Use getGitDiffNumstat instead')
-  Future<List<HapiDiff>> getSessionDiff(String sessionId) =>
-      _fileApi.getSessionDiff(sessionId);
-
   /// 设置 SSE 客户端可见性
   Future<bool> setVisibility(bool visible, {String? subscriptionId}) =>
       _fileApi.setVisibility(visible, subscriptionId: subscriptionId);
@@ -243,9 +226,8 @@ final hapiApiServiceProvider = Provider<HapiApiService?>((ref) {
   if (!config.isConfigured) {
     return null;
   }
-  final errorRecoveryService = ref.watch(errorRecoveryServiceProvider);
   final cacheService = ref.watch(cacheServiceProvider);
-  return HapiApiService(config, errorRecoveryService, cacheService);
+  return HapiApiService(config, null, cacheService);
 });
 
 /// 连接测试 Provider

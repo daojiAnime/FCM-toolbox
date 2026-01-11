@@ -28,7 +28,7 @@ val hasFileSigning = keystorePropertiesFile.exists()
 android {
     namespace = "io.github.daojianime.ccmonitor"
     compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         // 启用 core library desugaring (ota_update 等插件需要)
@@ -48,6 +48,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // 启用 Multidex 支持（防止方法数超过 64K 限制）
+        multiDexEnabled = true
     }
 
     signingConfigs {

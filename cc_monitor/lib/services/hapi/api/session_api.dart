@@ -3,13 +3,16 @@ import 'package:dio/dio.dart';
 
 import '../../../models/hapi/hapi.dart';
 import '../../cache_service.dart';
+import 'cached_repository.dart';
 import 'hapi_api_client.dart';
 
 /// Session 相关 API
 class SessionApi {
-  SessionApi(this._client);
+  SessionApi(this._client)
+    : _cacheRepo = CachedRepository(_client.cacheService);
 
   final HapiApiClient _client;
+  final CachedRepository _cacheRepo;
 
   /// 测试连接
   Future<HapiHealthResponse> testConnection() async {
@@ -36,61 +39,66 @@ class SessionApi {
   Future<List<Map<String, dynamic>>> getSessions({
     bool forceRefresh = false,
   }) async {
-    // 尝试从缓存获取
-    if (!forceRefresh && _client.cacheService != null) {
-      final cached = _client.cacheService!.get<List<Map<String, dynamic>>>(
-        CacheKeys.sessions,
-      );
-      if (cached != null) return cached;
-    }
+    return _cacheRepo.fetch(
+      key: CacheKeys.sessions,
+      ttl: const Duration(seconds: 30),
+      forceRefresh: forceRefresh,
+      fetcher:
+          () async => _client.withRetry(
+            operationName: 'getSessions',
+            action: () async {
+              try {
+                final response = await _client.dio.get(
+                  _client.apiUrl('/sessions'),
+                );
+                if (response.data is Map && response.data['sessions'] is List) {
+                  return List<Map<String, dynamic>>.from(
+                    response.data['sessions'],
+                  );
+                }
+                if (response.data is List) {
+                  return List<Map<String, dynamic>>.from(response.data);
+                }
+                return <Map<String, dynamic>>[];
+              } on DioException catch (e) {
+                throw _client.handleDioError(e);
+              }
+            },
+          ),
+    );
+  }
 
-    final result = await _client.withRetry(
-      operationName: 'getSessions',
-      action: () async {
+  /// 使会话缓存失效
+  void invalidateSessionsCache() {
+    _cacheRepo.invalidateByPrefix('session');
+  }
+
+  /// 获取会话详情
+  /// API 返回结构: { session: {...} }
+  Future<Map<String, dynamic>?> getSession(
+    String sessionId, {
+    bool forceRefresh = false,
+  }) async {
+    return _cacheRepo.fetch(
+      key: CacheKeys.detailKey(sessionId),
+      ttl: const Duration(seconds: 30),
+      forceRefresh: forceRefresh,
+      fetcher: () async {
         try {
-          final response = await _client.dio.get(_client.apiUrl('/sessions'));
-          if (response.data is Map && response.data['sessions'] is List) {
-            return List<Map<String, dynamic>>.from(response.data['sessions']);
+          final response = await _client.dio.get(
+            _client.apiUrl('/sessions/$sessionId'),
+          );
+          final data = response.data as Map<String, dynamic>?;
+          // Web 版本返回 { session: {...} } 结构，需要解包
+          if (data != null && data['session'] is Map<String, dynamic>) {
+            return data['session'] as Map<String, dynamic>;
           }
-          if (response.data is List) {
-            return List<Map<String, dynamic>>.from(response.data);
-          }
-          return <Map<String, dynamic>>[];
+          return data;
         } on DioException catch (e) {
           throw _client.handleDioError(e);
         }
       },
     );
-
-    _client.cacheService?.set(
-      CacheKeys.sessions,
-      result,
-      ttl: const Duration(seconds: 30),
-    );
-    return result;
-  }
-
-  /// 使会话缓存失效
-  void invalidateSessionsCache() {
-    _client.cacheService?.clearPrefix('session');
-  }
-
-  /// 获取会话详情
-  /// API 返回结构: { session: {...} }
-  Future<Map<String, dynamic>?> getSession(String sessionId) async {
-    try {
-      final response = await _client.dio.get(
-        _client.apiUrl('/sessions/$sessionId'),
-      );
-      final data = response.data as Map<String, dynamic>?;
-      // Web 版本返回 { session: {...} } 结构，需要解包
-      if (data != null && data['session'] is Map<String, dynamic>) {
-        return data['session'] as Map<String, dynamic>;
-      }
-      return data;
-    } on DioException catch (e) {
-      throw _client.handleDioError(e);
-    }
   }
 
   /// 创建新会话

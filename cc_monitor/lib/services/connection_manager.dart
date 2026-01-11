@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../common/logger.dart';
+import 'connection_state.dart';
 import 'hapi/hapi_config_service.dart';
 import 'hapi/hapi_sse_service.dart';
 import 'firestore_message_service.dart';
@@ -78,7 +79,11 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
   StreamSubscription? _connectivitySubscription;
   Timer? _fallbackTimer;
   DateTime? _lastSwitchTime;
+  bool _hasInitializedDataSource = false; // 追踪是否已完成初始数据源判断
   // 注：ref.listen 在 Riverpod 中会自动管理生命周期，无需手动取消
+
+  // State 模式：状态机管理器
+  late ConnectionStateMachine _stateMachine;
 
   // 降级后尝试恢复 hapi 的间隔
   static const _recoveryCheckInterval = Duration(minutes: 2);
@@ -86,6 +91,9 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
   static const _switchDebounceTime = Duration(seconds: 30);
 
   void _init() {
+    // 初始化状态机（默认为 FirebaseOnly 状态）
+    _stateMachine = ConnectionStateMachine(const FirebaseOnlyState());
+
     // 监听网络连接状态
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
       _onConnectivityChanged,
@@ -104,8 +112,42 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
       next.whenData(_onHapiConnectionStateChanged);
     });
 
-    // 初始化数据源
-    _determineDataSource();
+    // 注意：不在此处立即调用 _determineDataSource()
+    // 因为此时 hapiConfigProvider 可能还未完成 init()
+    // 数据源判断会在 _onHapiConfigChanged 首次触发时执行
+  }
+
+  /// 创建连接上下文
+  ConnectionContext _createContext() {
+    final hapiConfig = _ref.read(hapiConfigProvider);
+    return ConnectionContext(
+      isOnline: state.isOnline,
+      hapiConfigured: hapiConfig.isConfigured,
+      hapiEnabled: hapiConfig.enabled,
+      startFirestore: _startFirestoreListening,
+      stopFirestore: _stopFirestoreListening,
+      reconnectHapi: () {
+        final sseService = _ref.read(hapiSseServiceProvider);
+        sseService?.reconnect();
+      },
+    );
+  }
+
+  /// 同步状态机状态到 ConnectionManagerState
+  ///
+  /// [fallbackReason] 可选的降级原因，与状态机同步合并为原子操作
+  /// [clearFallbackReason] 是否清除降级原因
+  void _syncStateFromStateMachine({
+    String? fallbackReason,
+    bool clearFallbackReason = false,
+  }) {
+    final currentState = _stateMachine.currentState;
+    // 合并状态机同步和附加字段更新为单次原子操作
+    state = state.copyWith(
+      dataSource: currentState.dataSourceType,
+      fallbackReason:
+          clearFallbackReason ? null : (fallbackReason ?? state.fallbackReason),
+    );
   }
 
   Future<void> _checkInitialConnectivity() async {
@@ -120,7 +162,7 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
     }
   }
 
-  void _onConnectivityChanged(List<ConnectivityResult> results) {
+  void _onConnectivityChanged(List<ConnectivityResult> results) async {
     final isOnline =
         results.isNotEmpty && !results.contains(ConnectivityResult.none);
     final wasOnline = state.isOnline;
@@ -130,136 +172,111 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
       'Connectivity changed: $results, online: $isOnline (was: $wasOnline)',
     );
 
+    // 更新 ConnectionManagerState
     state = state.copyWith(isOnline: isOnline);
 
-    // 只有当网络状态真正变化时才采取行动
+    // 使用状态机处理网络状态变化
     if (isOnline && !wasOnline) {
-      // 网络恢复，尝试重新连接 hapi
-      _attemptHapiRecovery();
+      // 网络恢复
+      await _stateMachine.handleNetworkOnline(_createContext());
+      _syncStateFromStateMachine();
     } else if (!isOnline && wasOnline) {
-      // 网络断开，切换到离线模式
-      _switchToFallback('网络已断开');
+      // 网络断开
+      await _stateMachine.handleNetworkOffline(_createContext());
+      _syncStateFromStateMachine();
     }
   }
 
-  void _onHapiConfigChanged(HapiConfig config) {
+  void _onHapiConfigChanged(HapiConfig config) async {
     Log.i('ConnMgr', 'hapi config changed: enabled=${config.enabled}');
-    _determineDataSource();
+
+    // 首次调用时必须执行数据源判断（无论配置是否完整）
+    if (!_hasInitializedDataSource) {
+      _hasInitializedDataSource = true;
+      Log.d('ConnMgr', 'First config load, determining data source');
+      _determineDataSource();
+      return;
+    }
+
+    // 后续配置变化：如果 hapi 被禁用，使用状态机处理
+    if (!config.enabled || !config.isConfigured) {
+      await _stateMachine.handleHapiDisabled(_createContext());
+      _syncStateFromStateMachine();
+    } else {
+      // hapi 重新启用，重新确定数据源
+      _determineDataSource();
+    }
   }
 
-  void _onHapiConnectionStateChanged(HapiConnectionState hapiState) {
+  void _onHapiConnectionStateChanged(HapiConnectionState hapiState) async {
     final wasConnected = state.hapiConnected;
     final isConnected = hapiState.isConnected;
     final isReconnecting =
         hapiState.status == HapiConnectionStatus.reconnecting;
 
-    // 更新连接状态
+    // 更新连接状态（独立于状态机）
     state = state.copyWith(
       hapiConnected: isConnected,
       hapiReconnecting: isReconnecting,
       lastHapiError: hapiState.errorMessage,
     );
 
+    // 使用状态机处理连接状态变化
     if (isConnected && !wasConnected) {
-      // hapi 连接成功，立即更新数据源为 hapi 模式
-      // 避免 _switchToHapi 的防抖逻辑导致状态不同步
+      // hapi 连接成功
       final hapiConfig = _ref.read(hapiConfigProvider);
       if (hapiConfig.isConfigured && hapiConfig.enabled) {
         Log.i('ConnMgr', 'SSE connected, switching to hapi mode');
         _fallbackTimer?.cancel();
-        state = state.copyWith(
-          dataSource: DataSourceType.hapiPrimary,
-          fallbackReason: null,
-        );
-        // 异步停止 Firestore 监听
-        _stopFirestoreListening();
+        await _stateMachine.handleHapiConnected(_createContext());
+        // 原子更新：同步状态机 + 清除降级原因
+        _syncStateFromStateMachine(clearFallbackReason: true);
       }
     } else if (!isConnected && wasConnected) {
       // hapi 连接断开
       if (!isReconnecting) {
-        _switchToFallback(hapiState.errorMessage ?? 'hapi 连接断开');
+        final reason = hapiState.errorMessage ?? 'hapi 连接断开';
+        await _stateMachine.handleHapiDisconnected(_createContext(), reason);
+        // 原子更新：同步状态机 + 设置降级原因
+        _syncStateFromStateMachine(fallbackReason: reason);
+        _scheduleRecoveryCheck();
       }
     } else if (hapiState.status == HapiConnectionStatus.error) {
-      // hapi 错误，切换到降级模式
-      _switchToFallback(hapiState.errorMessage ?? 'hapi 连接错误');
+      // hapi 错误
+      final reason = hapiState.errorMessage ?? 'hapi 连接错误';
+      await _stateMachine.handleHapiError(_createContext(), reason);
+      // 原子更新：同步状态机 + 设置降级原因
+      _syncStateFromStateMachine(fallbackReason: reason);
+      _scheduleRecoveryCheck();
     }
   }
 
-  void _determineDataSource() {
+  void _determineDataSource() async {
     final hapiConfig = _ref.read(hapiConfigProvider);
 
     if (!hapiConfig.isConfigured || !hapiConfig.enabled) {
       // hapi 未配置或已禁用，使用 Firebase
-      state = state.copyWith(
-        dataSource: DataSourceType.firebaseOnly,
-        fallbackReason: null,
-      );
+      await _stateMachine.handleHapiDisabled(_createContext());
+      // 原子更新：同步状态机 + 清除降级原因
+      _syncStateFromStateMachine(clearFallbackReason: true);
       Log.i('ConnMgr', 'Using Firebase only (hapi not configured)');
       return;
     }
 
     // hapi 已配置，检查连接状态
     if (state.hapiConnected) {
-      state = state.copyWith(
-        dataSource: DataSourceType.hapiPrimary,
-        fallbackReason: null,
-      );
+      await _stateMachine.handleHapiConnected(_createContext());
+      // 原子更新：同步状态机 + 清除降级原因
+      _syncStateFromStateMachine(clearFallbackReason: true);
       Log.i('ConnMgr', 'Using hapi as primary');
     } else {
       // hapi 配置了但未连接
-      state = state.copyWith(
-        dataSource: DataSourceType.firebaseFallback,
-        fallbackReason: state.lastHapiError ?? '等待 hapi 连接',
-      );
+      final reason = state.lastHapiError ?? '等待 hapi 连接';
+      await _stateMachine.handleHapiDisconnected(_createContext(), reason);
+      // 原子更新：同步状态机 + 设置降级原因
+      _syncStateFromStateMachine(fallbackReason: reason);
       Log.i('ConnMgr', 'Using Firebase fallback');
       _scheduleRecoveryCheck();
-    }
-  }
-
-  Future<void> _switchToFallback(String reason) async {
-    final hapiConfig = _ref.read(hapiConfigProvider);
-    if (!hapiConfig.isConfigured || !hapiConfig.enabled) {
-      // hapi 本来就没启用，不需要降级
-      return;
-    }
-
-    // 防抖检查
-    if (_lastSwitchTime != null) {
-      final timeSinceLastSwitch = DateTime.now().difference(_lastSwitchTime!);
-      if (timeSinceLastSwitch < _switchDebounceTime) {
-        Log.w('ConnMgr', '切换请求被防抖拒绝 (距上次切换 ${timeSinceLastSwitch.inSeconds}秒)');
-        return;
-      }
-    }
-
-    Log.i('ConnMgr', '开始切换到 Firebase 降级模式: $reason');
-
-    try {
-      // 步骤 1: 先启动 Firestore 实时监听
-      await _startFirestoreListening();
-      Log.i('ConnMgr', 'Firestore 监听已启动');
-
-      // 步骤 2: 等待短暂时间确保 Firestore 监听已建立
-      await Future.delayed(const Duration(seconds: 1));
-      Log.i('ConnMgr', 'Firestore 监听已稳定');
-
-      // 步骤 3: 更新状态为降级模式
-      state = state.copyWith(
-        dataSource: DataSourceType.firebaseFallback,
-        fallbackReason: reason,
-      );
-
-      // 步骤 4: 等待短暂过渡期（确保不会丢失消息）
-      await Future.delayed(const Duration(seconds: 1));
-
-      _lastSwitchTime = DateTime.now();
-      Log.i('ConnMgr', '✅ 成功切换到 Firebase 降级模式');
-
-      // 安排定期恢复检查
-      _scheduleRecoveryCheck();
-    } catch (e) {
-      Log.e('ConnMgr', '❌ 切换到 Firebase 失败', e);
-      // 切换失败，保持当前状态
     }
   }
 
@@ -272,7 +289,7 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
     });
   }
 
-  void _attemptHapiRecovery() {
+  void _attemptHapiRecovery() async {
     final hapiConfig = _ref.read(hapiConfigProvider);
     if (!hapiConfig.isConfigured || !hapiConfig.enabled) return;
 
@@ -280,12 +297,14 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
     if (sseService == null) return;
 
     // 只有在完全断开且不在重连过程中时才尝试恢复
-    // 避免与正在进行的连接产生竞态条件
     final currentStatus = sseService.currentState.status;
     if (currentStatus == HapiConnectionStatus.disconnected ||
         currentStatus == HapiConnectionStatus.error) {
       Log.i('ConnMgr', 'Attempting hapi recovery (status: $currentStatus)...');
-      sseService.reconnect();
+
+      // 使用状态机处理恢复尝试
+      await _stateMachine.handleAttemptRecovery(_createContext());
+      _syncStateFromStateMachine();
     }
   }
 
@@ -317,8 +336,33 @@ class ConnectionManager extends StateNotifier<ConnectionManagerState> {
   }
 
   /// 手动切换到 Firebase 模式
-  void forceFallback() {
-    _switchToFallback('用户手动切换');
+  Future<void> forceFallback() async {
+    final hapiConfig = _ref.read(hapiConfigProvider);
+    if (!hapiConfig.isConfigured || !hapiConfig.enabled) {
+      return;
+    }
+
+    // 防抖检查
+    if (_lastSwitchTime != null) {
+      final timeSinceLastSwitch = DateTime.now().difference(_lastSwitchTime!);
+      if (timeSinceLastSwitch < _switchDebounceTime) {
+        Log.w('ConnMgr', '切换请求被防抖拒绝 (距上次切换 ${timeSinceLastSwitch.inSeconds}秒)');
+        return;
+      }
+    }
+
+    const reason = '用户手动切换';
+    Log.i('ConnMgr', '开始切换到 Firebase 降级模式: $reason');
+
+    // 使用状态机处理降级
+    await _stateMachine.handleHapiDisconnected(_createContext(), reason);
+    // 原子更新：同步状态机 + 设置降级原因
+    _syncStateFromStateMachine(fallbackReason: reason);
+
+    _lastSwitchTime = DateTime.now();
+    Log.i('ConnMgr', '✅ 成功切换到 Firebase 降级模式');
+
+    _scheduleRecoveryCheck();
   }
 
   @override

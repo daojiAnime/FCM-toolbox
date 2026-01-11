@@ -50,6 +50,11 @@ class Log {
   static int _writeCount = 0; // 写入计数（用于定期刷新）
   static const int _flushInterval = 20; // 每 20 条日志刷新一次
 
+  // 写入队列（解决并发写入冲突）
+  static final List<String> _writeQueue = [];
+  static bool _isWriting = false;
+  static Timer? _flushTimer;
+
   /// 初始化 Logger
   ///
   /// [enableFileLogging] 是否启用文件日志（默认开启，Web 不支持）
@@ -164,24 +169,72 @@ class Log {
     // 控制台输出
     debugPrint(formatted);
 
-    // 文件写入（异步，不阻塞）
+    // 文件写入（队列化，避免并发冲突）
     if (_fileLoggingEnabled && _fileSink != null) {
-      try {
-        _fileSink!.writeln(formatted);
-        _writeCount++;
+      _enqueueWrite(formatted);
+    }
+  }
 
-        // 定期异步刷新到磁盘（每 10 条日志或遇到 Error/Warning）
-        if (_writeCount >= _flushInterval ||
-            level.priority >= LogLevel.warning.priority) {
-          // 使用 unawaited 异步刷新，不阻塞当前日志写入
-          unawaited(_fileSink!.flush());
-          _writeCount = 0;
-        }
-      } catch (e) {
-        // 静默处理写入错误，避免影响应用运行
-        debugPrint('[Log] Write error: $e');
+  /// 将日志加入写入队列
+  static void _enqueueWrite(String log) {
+    _writeQueue.add(log);
+
+    // 触发批量写入（防抖）
+    if (!_isWriting) {
+      _processWriteQueue();
+    }
+  }
+
+  /// 处理写入队列（批量写入，避免频繁 I/O）
+  static Future<void> _processWriteQueue() async {
+    if (_isWriting || _writeQueue.isEmpty || _fileSink == null) return;
+
+    _isWriting = true;
+
+    try {
+      // 批量取出队列中的日志
+      final batch = List<String>.from(_writeQueue);
+      _writeQueue.clear();
+
+      // 一次性写入
+      for (final log in batch) {
+        _fileSink!.writeln(log);
+      }
+
+      _writeCount += batch.length;
+
+      // 定期刷新（每 20 条或定时）
+      if (_writeCount >= _flushInterval) {
+        await _fileSink!.flush();
+        _writeCount = 0;
+      } else {
+        // 延迟刷新（避免频繁 flush）
+        _scheduleFlush();
+      }
+    } catch (e) {
+      // 静默处理写入错误，避免递归日志
+      // 不再输出错误日志，防止无限循环
+    } finally {
+      _isWriting = false;
+
+      // 如果队列中还有待写入的日志，继续处理
+      if (_writeQueue.isNotEmpty) {
+        unawaited(_processWriteQueue());
       }
     }
+  }
+
+  /// 调度延迟刷新
+  static void _scheduleFlush() {
+    _flushTimer?.cancel();
+    _flushTimer = Timer(const Duration(seconds: 2), () async {
+      try {
+        await _fileSink?.flush();
+        _writeCount = 0;
+      } catch (_) {
+        // 静默处理
+      }
+    });
   }
 
   /// 格式化日志
@@ -315,6 +368,14 @@ class Log {
 
   /// 关闭日志服务
   static Future<void> close() async {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+
+    // 处理剩余的队列
+    if (_writeQueue.isNotEmpty && _fileSink != null) {
+      await _processWriteQueue();
+    }
+
     await _fileSink?.flush();
     await _fileSink?.close();
     _fileSink = null;
@@ -343,6 +404,10 @@ class Log {
 
   /// 刷新文件缓冲
   static Future<void> flush() async {
+    // 先处理队列中的日志
+    if (_writeQueue.isNotEmpty) {
+      await _processWriteQueue();
+    }
     await _fileSink?.flush();
   }
 }

@@ -58,6 +58,9 @@ class HapiConfigNotifier extends StateNotifier<HapiConfig> {
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     await _loadConfig();
+    // 强制触发 state 更新，确保 listeners 被通知（即使配置值未变）
+    // 这对 ConnectionManager 的初始化非常重要
+    state = state.copyWith();
   }
 
   /// 加载配置

@@ -18,17 +18,9 @@ import '../services/hapi/hapi_config_service.dart';
 import '../services/hapi/hapi_event_handler.dart';
 import '../services/hapi/hapi_sse_service.dart';
 import '../services/interaction_service.dart';
-import '../widgets/chat/assistant_bubble.dart';
 import '../widgets/chat/chat_input.dart';
-import '../widgets/chat/task_card.dart';
-import '../widgets/chat/user_bubble.dart';
 import '../widgets/chat/collapsible_message_list.dart';
-import '../widgets/message_card/interactive_card.dart';
-import '../widgets/message_card/progress_card.dart';
-import '../widgets/message_card/complete_card.dart';
-import '../widgets/message_card/code_card.dart';
-import '../widgets/message_card/thinking_card.dart';
-import '../services/message_tracer.dart';
+import '../widgets/chat/message_item_widget.dart';
 
 /// 对话式会话页面 - 沉浸式聊天体验
 class ChatSessionPage extends ConsumerStatefulWidget {
@@ -54,9 +46,12 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+
+    // 延迟到下一帧后尝试加载（此时配置应已初始化）
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadMessageHistory();
-      // 不再自动切换，仅观察模式
+      if (mounted) {
+        _loadMessageHistory();
+      }
     });
   }
 
@@ -130,11 +125,37 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
         );
       }
     } catch (e) {
-      Log.e('ChatSess', 'Set permission mode failed: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('权限模式切换失败: $e'), backgroundColor: Colors.red),
+      // 检查是否是 409 Conflict (会话已结束)
+      if (e is HapiApiException && e.statusCode == 409) {
+        Log.w(
+          'ChatSess',
+          'Session offline, cannot change permission mode: ${widget.sessionId}',
         );
+
+        // 更新会话状态为 completed
+        ref
+            .read(sessionsProvider.notifier)
+            .updateStatus(widget.sessionId, SessionStatus.completed);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('会话已结束，无法修改权限模式'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
+        // 其他异常
+        Log.e('ChatSess', 'Set permission mode failed: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('权限模式切换失败: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -188,20 +209,26 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
   Future<void> _loadMessageHistory() async {
     if (_historyLoaded || _isLoadingHistory) return;
 
+    // 检查配置是否就绪
     final hapiConfig = ref.read(hapiConfigProvider);
-    if (!hapiConfig.enabled || !hapiConfig.isConfigured) return;
+    if (!hapiConfig.enabled || !hapiConfig.isConfigured) {
+      Log.d('ChatSess', 'Skip loading: hapi not configured');
+      return;
+    }
 
     setState(() => _isLoadingHistory = true);
 
     try {
       final eventHandler = ref.read(hapiEventHandlerProvider);
       if (eventHandler != null) {
+        Log.i('ChatSess', 'Loading history for ${widget.sessionId}');
         // 并行加载 session 详情和消息历史
         await Future.wait([
           eventHandler.loadSessionDetail(widget.sessionId),
           eventHandler.loadSessionMessages(widget.sessionId),
         ]);
         _historyLoaded = true;
+        Log.i('ChatSess', 'History loaded successfully');
       }
     } catch (e) {
       Log.e('ChatSess', 'Failed to load history: $e');
@@ -251,12 +278,35 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
         _markMessageAsSent(messageId);
       }
     } catch (e) {
-      // 异常，标记为失败
-      _markMessageAsFailed(messageId, e.toString());
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('发送失败: $e'), backgroundColor: Colors.red),
+      // 检查是否是 409 Conflict (会话已结束)
+      if (e is HapiApiException && e.statusCode == 409) {
+        Log.w(
+          'ChatSession',
+          'Session offline, updating status: ${widget.sessionId}',
         );
+
+        // 更新会话状态为 completed
+        ref
+            .read(sessionsProvider.notifier)
+            .updateStatus(widget.sessionId, SessionStatus.completed);
+
+        _markMessageAsFailed(messageId, '会话已结束');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('会话已结束，无法发送消息'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
+        // 其他异常，标记为失败
+        _markMessageAsFailed(messageId, e.toString());
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('发送失败: $e'), backgroundColor: Colors.red),
+          );
+        }
       }
     }
   }
@@ -301,24 +351,29 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final messages = ref.watch(sessionMessagesProvider(widget.sessionId));
-    // watch sessions 以便实时响应数据变化 (permissionMode, contextSize 等)
-    final sessions = ref.watch(sessionsProvider);
-    final session = sessions.firstWhereOrNull((s) => s.id == widget.sessionId);
+
+    // 性能优化1: 使用缓存的 processedMessagesProvider，避免重复计算
+    final messageTree = ref.watch(processedMessagesProvider(widget.sessionId));
+
+    // 性能优化2: 使用 select 只监听特定字段，避免全局重建
+    final session = ref.watch(
+      sessionsProvider.select(
+        (sessions) =>
+            sessions.firstWhereOrNull((s) => s.id == widget.sessionId),
+      ),
+    );
     final controlledByUser = session?.agentState?.controlledByUser ?? false;
 
+    // 性能优化3: 使用 select 只监听消息数量变化
+    final messageCount = ref.watch(
+      sessionMessagesProvider(widget.sessionId).select((msgs) => msgs.length),
+    );
+
     // 自动滚动处理
-    if (_autoScroll && messages.length > _previousMessageCount) {
+    if (_autoScroll && messageCount > _previousMessageCount) {
       _scrollToBottom();
     }
-    _previousMessageCount = messages.length;
-
-    // 消息聚合逻辑（与 hapi web 版一致）：
-    // 1. 使用 MessageTracer 追踪 sidechain 消息归属
-    // 2. 按 sidechainId 分组构建树
-    // 3. 如果没有有效的树结构，回退到连续工具消息聚合
-
-    final messageTree = MessageTracer.processMessages(messages);
+    _previousMessageCount = messageCount;
 
     // 检查树是否有效（有嵌套结构）
     final hasValidTree = messageTree.any((node) => node.hasChildren);
@@ -392,7 +447,7 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
             child: Container(
               color: colorScheme.surface, // 背景色
               child:
-                  _isLoadingHistory && messages.isEmpty
+                  _isLoadingHistory && messageCount == 0
                       ? const Center(child: CircularProgressIndicator())
                       : ListView.builder(
                         controller: _scrollController,
@@ -401,6 +456,12 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
                           vertical: DesignTokens.spacingM,
                         ),
                         itemCount: displayItems.length,
+                        // 性能优化: 扩大缓存范围，减少滚动时的卡顿
+                        cacheExtent: 500,
+                        // 性能优化: 禁用自动 RepaintBoundary（我们手动添加了）
+                        addRepaintBoundaries: false,
+                        // 性能优化: 禁用自动 KeepAlive（消息不需要保持状态）
+                        addAutomaticKeepAlives: false,
                         itemBuilder: (context, index) {
                           final item = displayItems[index];
                           if (item is MessageNode) {
@@ -409,7 +470,8 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
                             // 聚合的工具消息组
                             return CollapsibleMessageList(
                               messages: item.map((n) => n.message).toList(),
-                              messageBuilder: _buildMessageItem,
+                              messageBuilder:
+                                  (msg) => MessageItemWidget(message: msg),
                             );
                           }
                           return const SizedBox.shrink();
@@ -429,6 +491,8 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
                   session?.agentState?.controlledByUser ?? false;
               final hasPendingPermission =
                   session?.agentState?.requests.isNotEmpty ?? false;
+              final isSessionCompleted =
+                  session?.status == SessionStatus.completed;
               return ChatInput(
                 onSend: _sendMessage,
                 sessionId: widget.sessionId,
@@ -450,6 +514,7 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
                 permissionMode: session?.permissionMode,
                 contextSize: session?.contextSize,
                 onPermissionModeChange: _handlePermissionModeChange,
+                isSessionCompleted: isSessionCompleted,
               );
             },
           ),
@@ -511,18 +576,21 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
   Widget _buildMessageNode(MessageNode node, {int depth = 0}) {
     final message = node.message;
 
-    // 渲染消息本身 - 如果是 Task 类型，传递 children
-    final messageWidget =
-        message.payload is TaskExecutionPayload
-            ? _buildTaskMessage(
-              message,
-              node.children.map((n) => n.message).toList(),
-            )
-            : _buildMessageItem(message);
+    // 性能优化: 使用独立 Widget + RepaintBoundary 隔离重绘
+    final wrappedMessage = RepaintBoundary(
+      key: ValueKey('message_${message.id}'),
+      child: MessageItemWidget(
+        message: message,
+        children:
+            node.hasChildren
+                ? node.children.map((n) => n.message).toList()
+                : null,
+      ),
+    );
 
     // 没有子消息，直接返回
     if (!node.hasChildren) {
-      return messageWidget;
+      return wrappedMessage;
     }
 
     // 有子消息：分离 pending（需要展开）和 collapsible（可折叠）
@@ -533,7 +601,7 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 消息本身
-        messageWidget,
+        wrappedMessage,
 
         // Pending 子消息（需要用户操作，直接展开显示）
         if (pendingChildren.isNotEmpty)
@@ -554,138 +622,10 @@ class _ChatSessionPageState extends ConsumerState<ChatSessionPage> {
         if (collapsibleChildren.isNotEmpty)
           CollapsibleMessageList(
             messages: collapsibleChildren.map((n) => n.message).toList(),
-            messageBuilder: _buildMessageItem,
+            messageBuilder: (msg) => MessageItemWidget(message: msg),
           ),
       ],
     );
-  }
-
-  /// 构建 Task 类型消息（带 children 参数）
-  Widget _buildTaskMessage(Message message, List<Message> children) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: DesignTokens.spacingM),
-      child: TaskCard(
-        message: message,
-        children: children.isNotEmpty ? children : null,
-      ),
-    );
-  }
-
-  Widget _buildMessageItem(Message message) {
-    final payload = message.payload;
-
-    // 隐藏消息 - 不渲染（用于链追踪但不显示）
-    if (payload is HiddenPayload) {
-      return const SizedBox.shrink();
-    }
-
-    // 用户消息
-    if (message.role == 'user') {
-      if (payload is UserMessagePayload) {
-        return SimpleUserBubble(
-          content: payload.content,
-          isPending: payload.isPending,
-        );
-      }
-      return const SizedBox.shrink();
-    }
-
-    // AI 消息 / 系统消息
-    // 任务执行卡片 (核心优化点)
-    if (payload is TaskExecutionPayload) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: DesignTokens.spacingM),
-        child: TaskCard(message: message),
-      );
-    }
-
-    // Markdown 消息
-    if (payload is MarkdownPayload) {
-      return SimpleAssistantBubble(
-        content: payload.content,
-        isStreaming: payload.streamingStatus == StreamingStatus.streaming,
-      );
-    }
-
-    // 思维链消息（可折叠显示）
-    if (payload is ThinkingPayload) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: DesignTokens.spacingM),
-        child: ThinkingCard(
-          content: payload.content,
-          timestamp: message.createdAt,
-          messageId: payload.streamingId ?? message.id,
-          streamingStatus: payload.streamingStatus,
-          isRead: message.isRead,
-        ),
-      );
-    }
-
-    // 交互式卡片
-    if (payload is InteractivePayload) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: DesignTokens.spacingM),
-        child: InteractiveMessageCard(
-          title: payload.title,
-          timestamp: message.createdAt,
-          message: payload.message,
-          requestId: payload.requestId,
-          interactiveType: payload.interactiveType,
-          metadata: payload.metadata,
-          isRead: message.isRead,
-          isPending: payload.status == PermissionStatus.pending,
-        ),
-      );
-    }
-
-    // 进度卡片
-    if (payload is ProgressPayload) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: DesignTokens.spacingM),
-        child: ProgressMessageCard(
-          title: payload.title,
-          timestamp: message.createdAt,
-          description: payload.description,
-          current: payload.current,
-          total: payload.total,
-          currentStep: payload.currentStep,
-          isRead: message.isRead,
-        ),
-      );
-    }
-
-    // 完成卡片
-    if (payload is CompletePayload) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: DesignTokens.spacingM),
-        child: CompleteMessageCard(
-          title: payload.title,
-          timestamp: message.createdAt,
-          summary: payload.summary,
-          duration: payload.duration,
-          toolCount: payload.toolCount,
-          isRead: message.isRead,
-        ),
-      );
-    }
-
-    // 代码卡片
-    if (payload is CodePayload) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: DesignTokens.spacingM),
-        child: CodeMessageCard(
-          title: payload.title,
-          timestamp: message.createdAt,
-          code: payload.code,
-          language: payload.language,
-          filename: payload.filename,
-          startLine: payload.startLine,
-          isRead: message.isRead,
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
   }
 }
 

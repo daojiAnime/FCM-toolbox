@@ -37,7 +37,6 @@ class MessageCard extends StatelessWidget {
         current: payload.current,
         total: payload.total,
         currentStep: payload.currentStep,
-        onTap: onTap,
         isRead: message.isRead,
       ),
       CompletePayload payload => CompleteMessageCard(
@@ -47,7 +46,6 @@ class MessageCard extends StatelessWidget {
         executionSummary: _getToolSummary(payload.summary, null),
         duration: payload.duration,
         toolCount: payload.toolCount,
-        onTap: onTap,
         isRead: message.isRead,
       ),
       ErrorPayload payload => LegacyMessageCard(
@@ -77,7 +75,6 @@ class MessageCard extends StatelessWidget {
         language: payload.language,
         filename: payload.filename,
         startLine: payload.startLine,
-        onTap: onTap,
         isRead: message.isRead,
       ),
       MarkdownPayload payload => MarkdownMessageCard(

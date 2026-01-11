@@ -62,27 +62,3 @@ class CachedRepository {
     Log.d('CachedRepo', 'All cache cleared');
   }
 }
-
-/// 缓存键常量
-class CacheKeys {
-  CacheKeys._();
-
-  /// 会话列表
-  static const String sessions = 'sessions';
-
-  /// 机器列表
-  static const String machines = 'machines';
-
-  /// 会话消息前缀 (使用 ${sessionMessages}_$sessionId 格式)
-  static const String sessionMessages = 'session_messages';
-
-  /// 会话详情前缀
-  static const String sessionDetail = 'session_detail';
-
-  /// 构建会话消息缓存键
-  static String messagesKey(String sessionId) =>
-      '${sessionMessages}_$sessionId';
-
-  /// 构建会话详情缓存键
-  static String detailKey(String sessionId) => '${sessionDetail}_$sessionId';
-}

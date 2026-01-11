@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../common/colors.dart';
+import '../models/session.dart';
+import '../providers/session_provider.dart';
 import '../services/hapi/hapi_api_service.dart';
 import 'chat_session_page.dart';
 
@@ -368,10 +370,28 @@ class _SessionManagementPageState extends ConsumerState<SessionManagementPage> {
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('操作失败: $e'), backgroundColor: Colors.red),
-        );
+      // 检查是否是 409 Conflict (会话已结束)
+      if (e is HapiApiException && e.statusCode == 409) {
+        // 更新会话状态为 completed
+        ref
+            .read(sessionsProvider.notifier)
+            .updateStatus(sessionId, SessionStatus.completed);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('会话已结束，无法执行此操作'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
+        // 其他异常
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('操作失败: $e'), backgroundColor: Colors.red),
+          );
+        }
       }
     } finally {
       // 清除 loading 状态

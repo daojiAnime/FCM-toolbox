@@ -6,6 +6,8 @@ import 'line_list_result_view.dart';
 import 'markdown_result_view.dart';
 import 'mutation_result_view.dart';
 import 'read_result_view.dart';
+import 'codex_diff_result_view.dart';
+import 'todo_write_result_view.dart';
 
 /// 工具视图组件类型
 typedef ToolViewBuilder =
@@ -72,6 +74,16 @@ class ToolViewRegistry {
     'WebSearch':
         ({required task, required isCompact, required context}) =>
             MarkdownResultView(task: task, isCompact: isCompact),
+
+    // CodexDiff：显示 Unified Diff
+    'CodexDiff':
+        ({required task, required isCompact, required context}) =>
+            CodexDiffResultView(task: task, isCompact: isCompact),
+
+    // TodoWrite：显示 Todo 列表
+    'TodoWrite':
+        ({required task, required isCompact, required context}) =>
+            TodoWriteResultView(task: task, isCompact: isCompact),
   };
 
   /// 获取工具对应的视图构建器

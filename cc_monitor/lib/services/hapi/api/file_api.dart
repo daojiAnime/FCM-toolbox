@@ -108,12 +108,6 @@ class FileApi {
     }
   }
 
-  /// 获取会话 Git Diff (兼容方法)
-  @Deprecated('Use getGitDiffNumstat instead')
-  Future<List<HapiDiff>> getSessionDiff(String sessionId) async {
-    return getGitDiffNumstat(sessionId);
-  }
-
   /// 设置 SSE 客户端可见性
   Future<bool> setVisibility(bool visible, {String? subscriptionId}) async {
     if (subscriptionId == null || subscriptionId.isEmpty) {

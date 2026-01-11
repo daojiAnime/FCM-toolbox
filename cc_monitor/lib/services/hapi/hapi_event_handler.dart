@@ -2,38 +2,51 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../common/logger.dart';
-import 'package:uuid/uuid.dart';
 import '../../models/message.dart';
 import '../../models/payload/payload.dart';
-import '../../models/session.dart';
 import '../../models/task.dart';
 import '../../providers/messages_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../providers/streaming_provider.dart';
-import '../interaction_service.dart';
-import '../cache_service.dart';
-import '../toast_service.dart';
 import 'buffer_manager.dart';
 import 'hapi_api_service.dart';
 import 'hapi_config_service.dart';
 import 'hapi_sse_service.dart';
-
-const _uuid = Uuid();
+import 'event/event_handler.dart';
+import 'event/message_handler.dart';
+import 'event/message_parser.dart';
+import 'event/permission_handler.dart';
+import 'event/session_handler.dart';
 
 /// hapi 事件处理器 - 监听 SSE 事件并更新应用状态
 class HapiEventHandler {
-  HapiEventHandler(this._ref);
+  HapiEventHandler(this._ref) {
+    // 初始化事件处理链 (Chain of Responsibility 模式)
+    _parser = HapiMessageParser(_ref, _bufferManager);
+    _messageHandler = MessageEventHandler(_ref, _bufferManager, _parser);
+    _sessionHandler = SessionEventHandler(_ref, _bufferManager, _parser);
+    _permissionHandler = PermissionEventHandler(_ref, _parser);
+
+    // 构建事件处理链
+    _handlerChain =
+        EventHandlerChain()
+          ..add(_messageHandler)
+          ..add(_sessionHandler)
+          ..add(_permissionHandler);
+  }
 
   final Ref _ref;
   StreamSubscription<HapiSseEvent>? _subscription;
 
-  // 会话更新防抖器 - 防止频繁的会话更新导致 UI 抖动
-  final _sessionUpdateDebouncer = Debouncer(
-    delay: const Duration(milliseconds: 150),
-  );
-
   // 使用 BufferManager 单例管理所有缓冲区 (Singleton 模式)
   BufferManager get _bufferManager => BufferManager.instance;
+
+  // 事件处理器 (Chain of Responsibility 模式)
+  late final HapiMessageParser _parser;
+  late final MessageEventHandler _messageHandler;
+  late final SessionEventHandler _sessionHandler;
+  late final PermissionEventHandler _permissionHandler;
+  late final EventHandlerChain _handlerChain;
 
   /// 开始监听 SSE 事件
   void startListening() {
@@ -47,8 +60,8 @@ class HapiEventHandler {
     _subscription = sseService.events.listen(_handleEvent);
     Log.i('HapiEvent', 'Started listening');
 
-    // 连接后加载初始会话
-    loadSessions();
+    // 连接后加载初始会话 (使用 SessionHandler)
+    _sessionHandler.loadSessions();
   }
 
   /// 停止监听
@@ -60,653 +73,54 @@ class HapiEventHandler {
     _bufferManager.clearAll();
     _ref.read(streamingMessagesProvider.notifier).clear();
 
+    // 清理事件处理器资源
+    _sessionHandler.dispose();
+
     Log.i('HapiEvent', 'Stopped listening');
   }
 
-  /// 处理 SSE 事件
+  /// 处理 SSE 事件 (使用事件处理链)
   void _handleEvent(HapiSseEvent event) {
+    // 使用事件处理链处理大部分事件 (Chain of Responsibility 模式)
+    _handlerChain.handle(event);
+
+    // 保留少量未迁移到链中的事件处理
     switch (event.type) {
-      // 消息事件
-      case HapiSseEventType.message:
-        _handleMessageEvent(event);
-      case HapiSseEventType.permissionRequest:
-        _handlePermissionRequest(event);
-      case HapiSseEventType.todoUpdate:
-        _handleTodoUpdate(event);
-
-      // 会话事件
-      case HapiSseEventType.sessionUpdate:
-        _handleSessionUpdate(event);
-      case HapiSseEventType.sessionCreated:
-        _handleSessionCreated(event);
-      case HapiSseEventType.sessionEnded:
-        _handleSessionEnded(event);
-      case HapiSseEventType.sessionAdded:
-      case HapiSseEventType.sessionUpdated:
-      case HapiSseEventType.sessionRemoved:
-        loadSessions();
-
-      // 连接事件
+      // 连接事件 (已在 SSE 服务中处理)
       case HapiSseEventType.connectionChanged:
       case HapiSseEventType.connected:
-        break; // 已在 SSE 服务中处理
+        break;
 
-      // 流式内容
-      case HapiSseEventType.streamingContent:
-        _handleStreamingContent(event);
-      case HapiSseEventType.streamingComplete:
-        _handleStreamingComplete(event);
-
-      // 机器事件
+      // 机器事件 (暂不处理)
       case HapiSseEventType.machineUpdate:
       case HapiSseEventType.machineUpdated:
-        break; // 暂不处理
+        break;
 
-      // 其他
-      case HapiSseEventType.toast:
-        _handleToast(event);
-      case HapiSseEventType.error:
-        Log.w('HapiEvent', 'SSE error: ${event.data}');
-      case HapiSseEventType.unknown:
-        Log.w('HapiEvent', 'Unknown event: ${event.type}');
+      default:
+        // 其他事件已由事件处理链处理
+        break;
     }
   }
 
   /// 处理 toast 通知
-  void _handleToast(HapiSseEvent event) {
-    final data = event.data;
-    if (data == null) return;
-
-    final message = data['message'] as String? ?? data['text'] as String?;
-    if (message != null) {
-      final type = data['type'] as String?;
-      final toastType = switch (type) {
-        'error' => ToastType.error,
-        'warning' => ToastType.warning,
-        'success' => ToastType.success,
-        _ => ToastType.info,
-      };
-      ToastService().show(message, type: toastType);
-    }
-  }
 
   /// 处理消息事件
   /// hapi SSE 事件结构: { type: 'message-received', sessionId: 'xxx', message: {...} }
-  void _handleMessageEvent(HapiSseEvent event) {
-    final data = event.data;
-    if (data == null) return;
-
-    try {
-      // hapi message-received 事件: sessionId 和 message 都在顶层
-      final sessionId = event.sessionId ?? data['sessionId'] as String?;
-      final messageData = data['message'] as Map<String, dynamic>?;
-
-      if (sessionId == null || messageData == null) return;
-
-      final message = _parseHapiMessage(messageData, sessionId);
-      if (message != null) {
-        _ref.read(messagesProvider.notifier).addMessage(message);
-      }
-
-      // 从消息中提取 usage 并更新 session 的 contextSize
-      _updateSessionContextSize(sessionId, messageData);
-    } catch (e) {
-      Log.e('HapiEvent', 'Failed to parse message', e);
-    }
-  }
 
   /// 处理权限请求事件
-  void _handlePermissionRequest(HapiSseEvent event) {
-    final data = event.data;
-    if (data == null) return;
-
-    try {
-      // 注册 requestId -> sessionId 映射
-      final requestId = data['id'] as String? ?? data['requestId'] as String?;
-      final sessionId = event.sessionId ?? data['sessionId'] as String?;
-
-      if (requestId != null && sessionId != null) {
-        final interactionService = _ref.read(interactionServiceProvider);
-        if (interactionService is HapiInteractionService) {
-          interactionService.registerRequestSession(requestId, sessionId);
-        }
-      }
-
-      // 创建交互消息
-      final message = _parsePermissionRequest(data, sessionId);
-      if (message != null) {
-        _ref.read(messagesProvider.notifier).addMessage(message);
-      }
-    } catch (e) {
-      Log.e('HapiEvent', 'Failed to handle permission request', e);
-    }
-  }
 
   /// 处理会话更新事件（带防抖）
-  void _handleSessionUpdate(HapiSseEvent event) {
-    final data = event.data;
-    if (data == null) return;
-
-    final sessionId = data['id'] as String?;
-    if (sessionId == null) return;
-
-    // 累积更新 (使用 BufferManager)
-    _bufferManager.addPendingSessionUpdate(sessionId, data);
-
-    // 使用防抖批量处理
-    _sessionUpdateDebouncer.run(_flushSessionUpdates);
-  }
 
   /// 从消息中提取 usage 并更新 session 的 contextSize
-  void _updateSessionContextSize(
-    String sessionId,
-    Map<String, dynamic> messageData,
-  ) {
-    // 尝试从多个位置获取 usage
-    Map<String, dynamic>? usage;
-
-    // 1. 直接在消息顶层
-    usage = messageData['usage'] as Map<String, dynamic>?;
-
-    // 2. 在 content 中
-    if (usage == null) {
-      final content = messageData['content'];
-      if (content is Map<String, dynamic>) {
-        usage = content['usage'] as Map<String, dynamic>?;
-      }
-    }
-
-    if (usage == null) {
-      Log.v(
-        'HapiEvent',
-        'No usage data found in message for session $sessionId',
-      );
-      return;
-    }
-
-    // 计算 contextSize
-    final inputTokens =
-        usage['input_tokens'] as int? ?? usage['inputTokens'] as int? ?? 0;
-    final cacheCreation =
-        usage['cache_creation_input_tokens'] as int? ??
-        usage['cacheCreationInputTokens'] as int? ??
-        0;
-    final cacheRead =
-        usage['cache_read_input_tokens'] as int? ??
-        usage['cacheReadInputTokens'] as int? ??
-        0;
-    final contextSize = inputTokens + cacheCreation + cacheRead;
-
-    Log.d(
-      'HapiEvent',
-      'Context size calculated: $contextSize (input=$inputTokens, cache_creation=$cacheCreation, cache_read=$cacheRead)',
-    );
-
-    if (contextSize > 0) {
-      final sessions = _ref.read(sessionsProvider);
-      final session = sessions.firstWhereOrNull((s) => s.id == sessionId);
-      if (session != null) {
-        _ref
-            .read(sessionsProvider.notifier)
-            .upsertSession(session.copyWith(contextSize: contextSize));
-        Log.i(
-          'HapiEvent',
-          'Updated context size for session $sessionId: $contextSize',
-        );
-      } else {
-        Log.w(
-          'HapiEvent',
-          'Session $sessionId not found, cannot update context size',
-        );
-      }
-    } else {
-      Log.v('HapiEvent', 'Context size is 0, skipping update');
-    }
-  }
-
   /// 批量刷新会话更新
-  void _flushSessionUpdates() {
-    // 使用 BufferManager 获取并清空待处理更新
-    final updates = _bufferManager.consumePendingSessionUpdates();
-    if (updates.isEmpty) return;
-
-    final sessions = _ref.read(sessionsProvider);
-
-    for (final entry in updates.entries) {
-      try {
-        final newSession = _parseHapiSession(entry.value);
-        if (newSession != null) {
-          // 保留现有 session 的 contextSize（如果新数据中为 null）
-          // 因为 contextSize 通常来自消息的 usage 数据，而不是 session update 事件
-          final existingSession = sessions.firstWhereOrNull(
-            (s) => s.id == newSession.id,
-          );
-          final mergedSession =
-              existingSession != null && newSession.contextSize == null
-                  ? newSession.copyWith(
-                    contextSize: existingSession.contextSize,
-                  )
-                  : newSession;
-          _ref.read(sessionsProvider.notifier).upsertSession(mergedSession);
-        }
-      } catch (e) {
-        Log.e('HapiEvent', 'Failed to update session ${entry.key}', e);
-      }
-    }
-  }
 
   /// 处理会话创建事件
-  void _handleSessionCreated(HapiSseEvent event) {
-    final data = event.data;
-    if (data == null) return;
-
-    try {
-      final newSession = _parseHapiSession(data);
-      if (newSession != null) {
-        // 保留现有 session 的 contextSize（如果新数据中为 null）
-        final sessions = _ref.read(sessionsProvider);
-        final existingSession = sessions.firstWhereOrNull(
-          (s) => s.id == newSession.id,
-        );
-        final mergedSession =
-            existingSession != null && newSession.contextSize == null
-                ? newSession.copyWith(contextSize: existingSession.contextSize)
-                : newSession;
-        _ref.read(sessionsProvider.notifier).upsertSession(mergedSession);
-      }
-    } catch (e) {
-      Log.e('HapiEvent', 'Failed to create session', e);
-    }
-  }
 
   /// 处理会话结束事件
-  void _handleSessionEnded(HapiSseEvent event) {
-    final sessionId = event.sessionId ?? event.data?['id'] as String?;
-    if (sessionId == null) return;
-
-    _ref
-        .read(sessionsProvider.notifier)
-        .updateStatus(sessionId, SessionStatus.completed);
-  }
 
   /// 处理流式内容事件
-  void _handleStreamingContent(HapiSseEvent event) {
-    final data = event.data;
-    if (data == null) return;
-
-    try {
-      final messageId = data['messageId'] as String? ?? data['id'] as String?;
-      final chunk = data['chunk'] as String? ?? data['content'] as String?;
-      final sessionId = event.sessionId ?? data['sessionId'] as String?;
-
-      if (messageId == null) return;
-
-      // 初始化缓冲区和元数据 (使用 BufferManager)
-      if (!_bufferManager.hasStreamingBuffer(messageId)) {
-        _bufferManager.initStreamingBuffer(messageId, {
-          'sessionId': sessionId,
-          'type': data['type'] as String? ?? 'markdown',
-          'title': data['title'] as String?,
-          'language': data['language'] as String?,
-          'filename': data['filename'] as String?,
-          'projectName': data['projectName'] as String? ?? 'hapi',
-          'parentUuid':
-              data['parentUuid'] as String? ?? data['parentId'] as String?,
-          'contentUuid': data['uuid'] as String?,
-        });
-
-        // 开始流式传输
-        _ref
-            .read(streamingMessagesProvider.notifier)
-            .startStreaming(messageId, initialContent: chunk ?? '');
-
-        // 创建初始消息（状态为 streaming）
-        final message = _createStreamingMessage(messageId, chunk ?? '');
-        if (message != null) {
-          _ref.read(messagesProvider.notifier).addMessage(message);
-        }
-      } else if (chunk != null) {
-        // 追加内容 (使用 BufferManager)
-        _bufferManager.appendStreamingContent(messageId, chunk);
-
-        // 更新流式内容（使用 provider 内置的节流）
-        _ref
-            .read(streamingMessagesProvider.notifier)
-            .updateContent(
-              messageId,
-              _bufferManager.getStreamingContent(messageId) ?? '',
-            );
-      }
-    } catch (e) {
-      Log.e('HapiEvent', 'Failed to handle streaming content', e);
-    }
-  }
 
   /// 处理流式完成事件
-  void _handleStreamingComplete(HapiSseEvent event) {
-    final data = event.data;
-    if (data == null) return;
-
-    try {
-      final messageId = data['messageId'] as String? ?? data['id'] as String?;
-      if (messageId == null) return;
-
-      // 标记完成
-      final notifier = _ref.read(streamingMessagesProvider.notifier);
-      notifier.complete(messageId);
-
-      // 更新消息为完成状态 (使用 BufferManager)
-      final finalContent = _bufferManager.getStreamingContent(messageId) ?? '';
-      final metadata = _bufferManager.getStreamingMetadata(messageId);
-
-      if (metadata != null) {
-        final message = _createFinalMessage(messageId, finalContent, metadata);
-        if (message != null) {
-          _ref.read(messagesProvider.notifier).replaceMessage(message);
-        }
-      }
-
-      // 清理缓冲区 (使用 BufferManager)
-      _bufferManager.removeStreamingBuffer(messageId);
-
-      // 延迟清理流式状态（让 UI 有时间显示最终状态）
-      Future.delayed(const Duration(milliseconds: 500), () {
-        notifier.remove(messageId);
-      });
-    } catch (e) {
-      Log.e('HapiEvent', 'Failed to handle streaming complete', e);
-    }
-  }
-
-  /// 创建流式消息（初始状态）
-  Message? _createStreamingMessage(String messageId, String initialContent) {
-    final metadata = _bufferManager.getStreamingMetadata(messageId);
-    if (metadata == null) return null;
-
-    final sessionId = metadata['sessionId'] as String?;
-    if (sessionId == null) return null;
-
-    final type = metadata['type'] as String? ?? 'markdown';
-    final title = metadata['title'] as String? ?? _getTitleFromType(type);
-    final projectName = metadata['projectName'] as String? ?? 'hapi';
-    final parentId = metadata['parentUuid'] as String?;
-    final contentUuid = metadata['contentUuid'] as String?;
-
-    Payload payload;
-    if (type == 'code') {
-      payload = CodePayload(
-        title: title,
-        code: initialContent,
-        language: metadata['language'] as String?,
-        filename: metadata['filename'] as String?,
-        streamingStatus: StreamingStatus.streaming,
-      );
-    } else {
-      payload = MarkdownPayload(
-        title: title,
-        content: initialContent,
-        streamingStatus: StreamingStatus.streaming,
-        streamingId: messageId,
-      );
-    }
-
-    return Message(
-      id: messageId,
-      sessionId: sessionId,
-      payload: payload,
-      projectName: projectName,
-      createdAt: DateTime.now(),
-      parentId: parentId,
-      contentUuid: contentUuid,
-    );
-  }
-
-  /// 创建最终消息（完成状态）
-  Message? _createFinalMessage(
-    String messageId,
-    String content,
-    Map<String, dynamic> metadata,
-  ) {
-    final sessionId = metadata['sessionId'] as String?;
-    if (sessionId == null) return null;
-
-    final type = metadata['type'] as String? ?? 'markdown';
-    final title = metadata['title'] as String? ?? _getTitleFromType(type);
-    final projectName = metadata['projectName'] as String? ?? 'hapi';
-    final parentId = metadata['parentUuid'] as String?;
-    final contentUuid = metadata['contentUuid'] as String?;
-
-    Payload payload;
-    if (type == 'code') {
-      payload = CodePayload(
-        title: title,
-        code: content,
-        language: metadata['language'] as String?,
-        filename: metadata['filename'] as String?,
-        streamingStatus: StreamingStatus.complete,
-      );
-    } else {
-      payload = MarkdownPayload(
-        title: title,
-        content: content,
-        streamingStatus: StreamingStatus.complete,
-      );
-    }
-
-    return Message(
-      id: messageId,
-      sessionId: sessionId,
-      payload: payload,
-      projectName: projectName,
-      createdAt: DateTime.now(),
-      parentId: parentId,
-      contentUuid: contentUuid,
-    );
-  }
-
-  /// 处理 Todo 更新事件
-  void _handleTodoUpdate(HapiSseEvent event) {
-    final data = event.data;
-    final sessionId = event.sessionId ?? data?['sessionId'] as String?;
-    if (data == null || sessionId == null) return;
-
-    try {
-      final todos =
-          (data['todos'] as List?)
-              ?.map(
-                (e) => TodoItem(
-                  content: e['content'] as String? ?? '',
-                  status: e['status'] as String? ?? 'pending',
-                  activeForm: e['activeForm'] as String?,
-                ),
-              )
-              .toList();
-
-      if (todos != null) {
-        // 更新会话的 todos
-        final sessions = _ref.read(sessionsProvider);
-        final session = sessions.where((s) => s.id == sessionId).firstOrNull;
-        if (session != null) {
-          _ref
-              .read(sessionsProvider.notifier)
-              .upsertSession(session.copyWith(todos: todos));
-        }
-      }
-    } catch (e) {
-      Log.e('HapiEvent', 'Failed to update todos', e);
-    }
-  }
-
-  /// 解析 hapi 会话数据
-  /// hapi API 返回的数据结构示例:
-  /// {
-  ///   "id": "session_xxx",
-  ///   "active": true,
-  ///   "metadata": {
-  ///     "path": "/home/user/project",
-  ///     "summary": {"text": "项目描述"},
-  ///     "machineId": "machine_xxx"
-  ///   }
-  /// }
-  Session? _parseHapiSession(Map<String, dynamic> data) {
-    final id = data['id'] as String?;
-    if (id == null) return null;
-
-    // 解析 metadata 中的路径和名称
-    final metadata = data['metadata'] as Map<String, dynamic>?;
-    String? projectPath;
-    String projectName = 'Unknown';
-
-    if (metadata != null) {
-      // 从 metadata.path 获取路径
-      projectPath = metadata['path'] as String?;
-
-      // 从 metadata.summary.text 获取名称，如果没有则从路径提取
-      final summary = metadata['summary'] as Map<String, dynamic>?;
-      final summaryText = summary?['text'];
-      if (summaryText is String && summaryText.isNotEmpty) {
-        projectName = summaryText;
-      } else if (projectPath != null && projectPath.isNotEmpty) {
-        // 从路径提取项目名称（取最后一部分）
-        projectName = projectPath.split('/').last;
-      }
-    }
-
-    // 如果 metadata 为空，尝试旧版字段
-    projectPath ??= data['projectPath'] as String? ?? data['cwd'] as String?;
-    if (projectName == 'Unknown') {
-      projectName =
-          data['projectName'] as String? ??
-          data['project'] as String? ??
-          'Unknown';
-    }
-
-    // 从 active 字段或 status 字段确定状态
-    SessionStatus status;
-    if (data.containsKey('active')) {
-      // hapi 使用 active 布尔值
-      final isActive = data['active'] as bool? ?? false;
-      status = isActive ? SessionStatus.running : SessionStatus.completed;
-    } else {
-      // 回退到旧版 status 字符串
-      final statusStr = data['status'] as String? ?? 'running';
-      status = switch (statusStr) {
-        'running' || 'active' => SessionStatus.running,
-        'waiting' || 'pending' => SessionStatus.waiting,
-        'completed' || 'ended' => SessionStatus.completed,
-        _ => SessionStatus.running,
-      };
-    }
-
-    SessionProgress? progress;
-    if (data['progress'] != null) {
-      final p = data['progress'] as Map<String, dynamic>;
-      progress = SessionProgress(
-        current: p['current'] as int? ?? 0,
-        total: p['total'] as int? ?? 0,
-        currentStep: p['currentStep'] as String?,
-      );
-    }
-
-    List<TodoItem> todos = [];
-    if (data['todos'] != null) {
-      todos =
-          (data['todos'] as List)
-              .map(
-                (e) => TodoItem(
-                  content: e['content'] as String? ?? '',
-                  status: e['status'] as String? ?? 'pending',
-                  activeForm: e['activeForm'] as String?,
-                ),
-              )
-              .toList();
-    }
-
-    // 解析 agentState
-    AgentState? agentState;
-    final agentData = data['agentState'] as Map<String, dynamic>?;
-    if (agentData != null) {
-      agentState = AgentState(
-        controlledByUser: agentData['controlledByUser'] as bool? ?? false,
-        requests: agentData['requests'] as Map<String, dynamic>? ?? {},
-      );
-    }
-
-    // 解析 permissionMode 和 modelMode
-    final permissionMode = data['permissionMode'] as String? ?? 'default';
-    final modelMode = data['modelMode'] as String? ?? 'default';
-
-    // 解析 contextSize (从多个位置尝试)
-    int? contextSize;
-    // 1. 直接从 data 获取
-    contextSize = data['contextSize'] as int?;
-    // 2. 从 latestUsage 获取
-    if (contextSize == null) {
-      final latestUsage = data['latestUsage'] as Map<String, dynamic>?;
-      contextSize = latestUsage?['contextSize'] as int?;
-    }
-    // 3. 从 usage 计算
-    if (contextSize == null) {
-      final usage = data['usage'] as Map<String, dynamic>?;
-      if (usage != null) {
-        final inputTokens =
-            usage['input_tokens'] as int? ?? usage['inputTokens'] as int? ?? 0;
-        final cacheCreation =
-            usage['cache_creation_input_tokens'] as int? ??
-            usage['cacheCreationInputTokens'] as int? ??
-            0;
-        final cacheRead =
-            usage['cache_read_input_tokens'] as int? ??
-            usage['cacheReadInputTokens'] as int? ??
-            0;
-        contextSize = inputTokens + cacheCreation + cacheRead;
-      }
-    }
-
-    return Session(
-      id: id,
-      projectName: projectName,
-      projectPath: projectPath,
-      status: status,
-      progress: progress,
-      todos: todos,
-      currentTask: data['currentTask'] as String? ?? data['task'] as String?,
-      startedAt:
-          data['startedAt'] != null
-              ? DateTime.tryParse(data['startedAt'] as String) ?? DateTime.now()
-              : DateTime.now(),
-      lastUpdatedAt: DateTime.now(),
-      endedAt:
-          data['endedAt'] != null
-              ? DateTime.tryParse(data['endedAt'] as String)
-              : null,
-      toolCallCount:
-          data['toolCallCount'] as int? ?? data['toolCalls'] as int? ?? 0,
-      agentState: agentState,
-      permissionMode: permissionMode,
-      modelMode: modelMode,
-      contextSize: contextSize,
-    );
-  }
-
-  /// 初始加载所有会话
-  Future<void> loadSessions() async {
-    final apiService = _ref.read(hapiApiServiceProvider);
-    if (apiService == null) return;
-
-    try {
-      final sessionsData = await apiService.getSessions();
-      for (final data in sessionsData) {
-        final session = _parseHapiSession(data);
-        if (session != null) {
-          _ref.read(sessionsProvider.notifier).upsertSession(session);
-        }
-      }
-      Log.i('HapiEvent', 'Loaded ${sessionsData.length} sessions');
-    } catch (e) {
-      Log.e('HapiEvent', 'Failed to load sessions', e);
-    }
-  }
 
   /// 加载单个会话的详情（包含 permissionMode 等完整字段）
   Future<void> loadSessionDetail(String sessionId) async {
@@ -716,7 +130,7 @@ class HapiEventHandler {
     try {
       final data = await apiService.getSession(sessionId);
       if (data != null) {
-        final newSession = _parseHapiSession(data);
+        final newSession = _parser.parseHapiSession(data);
         if (newSession != null) {
           // 保留现有 session 的 contextSize（如果新数据中为 null）
           final sessions = _ref.read(sessionsProvider);
@@ -1326,10 +740,6 @@ class HapiEventHandler {
       }
     }
 
-    // 解析 meta 信息
-    final meta = contentWrapper['meta'] as Map<String, dynamic>?;
-    final sentFrom = meta?['sentFrom'] as String?;
-
     return Message(
       id: id,
       sessionId: sessionId,
@@ -1455,12 +865,6 @@ class HapiEventHandler {
           // 参考 hapi web tracer.ts: Task 工具的 input.prompt 用于 sidechain 匹配
           if (toolName == 'Task') {
             extractedTaskPrompt = input['prompt'] as String?;
-            if (extractedTaskPrompt != null) {
-              final shortPrompt =
-                  extractedTaskPrompt.length > 50
-                      ? extractedTaskPrompt.substring(0, 50)
-                      : extractedTaskPrompt;
-            }
           }
         }
 
@@ -1613,6 +1017,7 @@ class HapiEventHandler {
   /// - assistant: AI 响应 → MarkdownPayload 或 TaskExecutionPayload
   /// - tool_use: 工具调用 → TaskExecutionPayload
   /// - progress/complete/error/warning/code: 特定类型消息
+  // ignore: unused_element
   Message? _parseHapiMessage(Map<String, dynamic> data, String? sessionId) {
     if (sessionId == null) {
       Log.w('HapiEvent', 'sessionId is null, skipping message');
@@ -1862,10 +1267,6 @@ class HapiEventHandler {
         }
       }
     }
-
-    // 解析 meta 信息
-    final meta = contentWrapper['meta'] as Map<String, dynamic>?;
-    final sentFrom = meta?['sentFrom'] as String?;
 
     return Message(
       id: id,
@@ -2646,43 +2047,6 @@ class HapiEventHandler {
   }
 
   /// 解析权限请求为 Message 对象
-  Message? _parsePermissionRequest(
-    Map<String, dynamic> data,
-    String? sessionId,
-  ) {
-    if (sessionId == null) {
-      Log.w('HapiEvent', 'sessionId is null for permission request');
-      return null;
-    }
-
-    // 使用服务器提供的 ID，如果没有则生成唯一 UUID
-    final requestId =
-        data['id'] as String? ?? data['requestId'] as String? ?? _uuid.v4();
-
-    final toolName =
-        data['toolName'] as String? ?? data['tool'] as String? ?? 'unknown';
-    final description = data['description'] as String? ?? '请求执行操作';
-    final projectName = data['projectName'] as String? ?? 'hapi';
-
-    return Message(
-      id: 'perm_$requestId',
-      sessionId: sessionId,
-      payload: InteractivePayload(
-        title: '权限请求: $toolName',
-        message: description,
-        requestId: requestId,
-        interactiveType: InteractiveType.permission,
-        metadata: {
-          'toolName': toolName,
-          if (data['args'] != null) 'args': data['args'],
-        },
-      ),
-      projectName: projectName,
-      toolName: toolName,
-      createdAt: DateTime.now(),
-    );
-  }
-
   /// 根据消息类型获取默认标题
   String _getTitleFromType(String type) {
     return switch (type) {
@@ -2699,9 +2063,8 @@ class HapiEventHandler {
   /// 释放资源
   void dispose() {
     stopListening();
-    // 刷新剩余的会话更新
-    _flushSessionUpdates();
-    _sessionUpdateDebouncer.dispose();
+    // 清理事件处理器资源
+    _sessionHandler.dispose();
   }
 }
 

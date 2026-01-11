@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../common/logger.dart';
 import 'hapi_config_service.dart';
 import 'hapi_api_service.dart';
+import 'sse_parser.dart';
+import '../error_recovery_strategy.dart';
 
 /// SSE 事件类型 (与 hapi web 保持一致)
 enum HapiSseEventType {
@@ -199,16 +201,25 @@ class HapiConnectionState {
 
 /// hapi SSE 服务 - 管理与 hapi server 的实时连接
 class HapiSseService {
-  HapiSseService(this._config, this._apiService);
+  HapiSseService(
+    this._config,
+    this._apiService, [
+    ErrorRecoveryStrategy? recoveryStrategy,
+  ]) : _recoveryStrategy = recoveryStrategy ?? RecoveryStrategies.connection;
 
-  final HapiConfig _config;
-  final HapiApiService? _apiService;
+  HapiConfig _config; // 可变，允许配置更新
+  HapiApiService? _apiService; // 可变，允许 API service 更新
+  // ignore: unused_field - 保留用于未来扩展，与 ErrorRecoveryStrategy 保持一致
+  final ErrorRecoveryStrategy _recoveryStrategy;
 
   Dio? _dio;
   CancelToken? _cancelToken;
-  StreamSubscription<String>? _subscription;
+  StreamSubscription<SseParseResult>? _subscription;
   Timer? _reconnectTimer;
   Timer? _heartbeatTimer;
+
+  // SSE 解析器
+  SseStreamParser? _sseParser;
 
   // SSE 断线续传支持
   String? _lastEventId;
@@ -230,10 +241,11 @@ class HapiSseService {
   // 当前状态
   HapiConnectionState _currentState = const HapiConnectionState();
 
+  // 重连标志（防止循环）
+  bool _isReconnecting = false;
+
   // 重连配置
   static const _maxReconnectAttempts = 10;
-  static const _initialReconnectDelay = Duration(seconds: 1);
-  static const _maxReconnectDelay = Duration(seconds: 30);
 
   /// 事件流
   Stream<HapiSseEvent> get events => _eventController.stream;
@@ -250,6 +262,22 @@ class HapiSseService {
 
   /// SSE 订阅 ID (用于 visibility API)
   String? get subscriptionId => _subscriptionId;
+
+  /// 更新配置（由 Provider 在配置变化时调用）
+  void updateConfig(HapiConfig config) {
+    _config = config;
+  }
+
+  /// 更新 API Service（由 Provider 在配置变化时调用）
+  void updateApiService(HapiApiService? apiService) {
+    if (_apiService != apiService) {
+      Log.d(
+        'SSE',
+        'Updating API Service: ${apiService != null ? "available" : "null"}',
+      );
+      _apiService = apiService;
+    }
+  }
 
   /// 连接到 SSE 端点
   Future<void> connect() async {
@@ -292,13 +320,18 @@ class HapiSseService {
       );
       _cancelToken = CancelToken();
 
-      String? jwtToken;
-      if (_apiService != null) {
-        jwtToken = await _apiService.getJwtToken();
+      // 获取 JWT token
+      final apiService = _apiService;
+      if (apiService == null) {
+        throw Exception('API Service not available for SSE connection');
       }
+
+      final jwtToken = await apiService.getJwtToken();
       if (jwtToken == null || jwtToken.isEmpty) {
         throw Exception('Failed to get JWT token for SSE connection');
       }
+
+      Log.d('SSE', 'JWT token obtained for connection');
 
       final queryParams = <String, String>{
         'token': jwtToken,
@@ -350,12 +383,26 @@ class HapiSseService {
         throw Exception('No stream in response');
       }
 
-      _subscription = stream
+      // 创建 SSE 解析器
+      _sseParser = SseParserFactory.createStreamParser(
+        defaultEventType: 'message',
+        onEvent: _handleSseEvent,
+        onRetryDelay: _handleRetryDelay,
+        onError: (error, stackTrace) {
+          Log.e('SSE', 'Parser error', error, stackTrace);
+        },
+      );
+
+      // 使用 SSE 解析器处理流
+      final lineStream = stream
           .cast<List<int>>()
           .transform(utf8.decoder)
-          .transform(const LineSplitter())
+          .transform(const LineSplitter());
+
+      _subscription = _sseParser!
+          .parse(lineStream)
           .listen(
-            _handleLine,
+            _handleParseResult,
             onError: _handleError,
             onDone: _handleDone,
             cancelOnError: false,
@@ -370,45 +417,43 @@ class HapiSseService {
     }
   }
 
-  String _currentEventType = 'message';
-  StringBuffer _currentData = StringBuffer();
-
-  void _handleLine(String line) {
+  /// 处理 SSE 事件（从解析器回调触发）
+  void _handleSseEvent(String eventType, String data, String? eventId) {
     _lastEventTime = DateTime.now();
 
-    if (line.isEmpty) {
-      if (_currentData.isNotEmpty) {
-        final event = HapiSseEvent.fromRaw(
-          _currentEventType,
-          _currentData.toString().trim(),
-        );
-        if (event.type == HapiSseEventType.connectionChanged) {
-          final data = event.data;
-          if (data != null && data['data'] is Map) {
-            _subscriptionId =
-                (data['data'] as Map<String, dynamic>)['subscriptionId']
-                    as String?;
-          }
-        }
-        _eventController.add(event);
-      }
-      _currentEventType = 'message';
-      _currentData = StringBuffer();
-      return;
+    // 更新 lastEventId
+    if (eventId != null) {
+      _lastEventId = eventId;
     }
 
-    if (line.startsWith('event:')) {
-      _currentEventType = line.substring(6).trim();
-    } else if (line.startsWith('data:')) {
-      if (_currentData.isNotEmpty) _currentData.write('\n');
-      _currentData.write(line.substring(5).trim());
-    } else if (line.startsWith('id:')) {
-      _lastEventId = line.substring(3).trim();
-    } else if (line.startsWith('retry:')) {
-      final retryMs = int.tryParse(line.substring(6).trim());
-      if (retryMs != null && retryMs > 0) {
-        _serverRetryDelay = Duration(milliseconds: retryMs);
+    // 创建 HapiSseEvent
+    final event = HapiSseEvent.fromRaw(eventType, data);
+
+    // 提取 subscriptionId
+    if (event.type == HapiSseEventType.connectionChanged) {
+      final eventData = event.data;
+      if (eventData != null && eventData['data'] is Map) {
+        _subscriptionId =
+            (eventData['data'] as Map<String, dynamic>)['subscriptionId']
+                as String?;
       }
+    }
+
+    // 发送事件
+    _eventController.add(event);
+  }
+
+  /// 处理服务器重试延迟指令
+  void _handleRetryDelay(Duration delay) {
+    _serverRetryDelay = delay;
+    Log.i('SSE', 'Server suggested retry delay: ${delay.inMilliseconds}ms');
+  }
+
+  /// 处理解析结果（可选，用于调试）
+  void _handleParseResult(SseParseResult result) {
+    // 解析结果已通过回调处理，此处仅用于日志或调试
+    if (result.hasEvent) {
+      Log.v('SSE', 'Event parsed: ${result.eventType}');
     }
   }
 
@@ -471,17 +516,8 @@ class HapiSseService {
       return;
     }
 
-    // 指数退避 + 随机抖动 (±25%)，防止 thundering herd
-    final baseDelayMs =
-        _serverRetryDelay?.inMilliseconds ??
-        (_initialReconnectDelay.inMilliseconds *
-                (1 << _currentState.reconnectAttempts))
-            .clamp(
-              _initialReconnectDelay.inMilliseconds,
-              _maxReconnectDelay.inMilliseconds,
-            );
-    final jitterFactor = 0.75 + Random().nextDouble() * 0.5; // 0.75 ~ 1.25
-    final delay = Duration(milliseconds: (baseDelayMs * jitterFactor).round());
+    // 使用与 ErrorRecoveryStrategy 一致的延迟计算逻辑
+    final delay = _calculateReconnectDelay(_currentState.reconnectAttempts + 1);
 
     Log.i(
       'SSE',
@@ -500,9 +536,42 @@ class HapiSseService {
     });
   }
 
+  /// 计算重连延迟（与 ErrorRecoveryStrategy 一致的算法）
+  /// 使用指数退避 + 随机抖动，防止雷鸣群效应
+  Duration _calculateReconnectDelay(int attempt) {
+    // 优先使用服务器建议的延迟
+    if (_serverRetryDelay != null) {
+      return _serverRetryDelay!;
+    }
+
+    // 使用与 RecoveryStrategies.connection 相同的参数
+    // initialDelay: 1s, maxDelay: 30s, multiplier: 2.0, jitterFactor: 0.25
+    const initialDelayMs = 1000;
+    const maxDelayMs = 30000;
+    const multiplier = 2.0;
+    const jitterFactor = 0.25;
+
+    // 指数增长: initialDelay * multiplier^(attempt-1)
+    final exponentialDelayMs = initialDelayMs * pow(multiplier, attempt - 1);
+
+    // 添加随机抖动: ±25%
+    final random = Random();
+    final jitter =
+        exponentialDelayMs * jitterFactor * (2 * random.nextDouble() - 1);
+    final delayMs = (exponentialDelayMs + jitter).toInt();
+
+    // 限制最大延迟
+    final clampedDelayMs = delayMs.clamp(initialDelayMs, maxDelayMs);
+    return Duration(milliseconds: clampedDelayMs);
+  }
+
   void _updateState(HapiConnectionState state) {
     _currentState = state;
-    _connectionStateController.add(state);
+
+    // 在重连期间跳过状态广播，避免触发 ConnectionManager 的循环处理
+    if (!_isReconnecting) {
+      _connectionStateController.add(state);
+    }
   }
 
   void _startHeartbeatCheck() {
@@ -533,29 +602,52 @@ class HapiSseService {
     _dio?.close();
     _cancelToken = null;
     _dio = null;
+    _sseParser = null;
     _updateState(
       const HapiConnectionState(status: HapiConnectionStatus.disconnected),
     );
   }
 
   Future<void> reconnect() async {
-    disconnect();
-    await Future.delayed(const Duration(milliseconds: 100));
-    await connect();
+    // 设置重连标志，防止状态更新触发循环
+    _isReconnecting = true;
+
+    try {
+      disconnect();
+      await Future.delayed(const Duration(milliseconds: 100));
+      await connect();
+    } finally {
+      // 重连完成，恢复状态广播
+      _isReconnecting = false;
+
+      // 手动广播最终状态
+      _connectionStateController.add(_currentState);
+    }
   }
 
   Future<void> resetAndReconnect() async {
-    disconnect();
-    _lastEventId = null;
-    _serverRetryDelay = null;
-    _updateState(
-      const HapiConnectionState(
-        status: HapiConnectionStatus.disconnected,
-        reconnectAttempts: 0,
-      ),
-    );
-    await Future.delayed(const Duration(milliseconds: 100));
-    await connect();
+    // 设置重连标志，防止状态更新触发循环
+    _isReconnecting = true;
+
+    try {
+      disconnect();
+      _lastEventId = null;
+      _serverRetryDelay = null;
+      _updateState(
+        const HapiConnectionState(
+          status: HapiConnectionStatus.disconnected,
+          reconnectAttempts: 0,
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 100));
+      await connect();
+    } finally {
+      // 重连完成，恢复状态广播
+      _isReconnecting = false;
+
+      // 手动广播最终状态
+      _connectionStateController.add(_currentState);
+    }
   }
 
   bool get hasReachedMaxReconnectAttempts =>
@@ -578,17 +670,41 @@ final hapiSseServiceProvider = Provider<HapiSseService?>((ref) {
 
   // 初始读取配置（不使用 watch 避免重建）
   final config = ref.read(hapiConfigProvider);
-  if (!config.isConfigured) return null;
 
+  // 注意：总是创建 service，即使配置未就绪
+  // 这样可以避免初始化时序问题（配置可能还在加载中）
   final apiService = ref.read(hapiApiServiceProvider);
   final service = HapiSseService(config, apiService);
 
-  // 初始连接
-  if (config.enabled) service.connect();
+  // 只有配置已就绪且启用时才初始连接
+  if (config.enabled && config.isConfigured) {
+    Log.i('SSE', 'Initial connect (config ready)');
+    service.connect();
+  } else {
+    Log.d('SSE', 'Skip initial connect (config not ready or disabled)');
+  }
 
   // 监听配置变化，动态调整连接状态（而非重建服务）
   ref.listen<HapiConfig>(hapiConfigProvider, (previous, next) {
-    if (!next.isConfigured) {
+    // 先更新service的配置引用
+    service.updateConfig(next);
+
+    // 同时更新 API Service（配置变化时可能重新创建）
+    final newApiService = ref.read(hapiApiServiceProvider);
+    service.updateApiService(newApiService);
+
+    // 处理配置首次加载完成的情况
+    final wasConfigured = previous?.isConfigured ?? false;
+    final isConfigured = next.isConfigured;
+
+    if (!wasConfigured && isConfigured && next.enabled) {
+      // 配置首次加载完成且启用，建立连接
+      Log.i('SSE', 'Config loaded, connecting...');
+      service.connect();
+      return;
+    }
+
+    if (!isConfigured) {
       service.disconnect();
       return;
     }

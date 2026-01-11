@@ -5,13 +5,17 @@ import 'package:dio/dio.dart';
 
 import '../../../models/hapi/hapi.dart';
 import '../hapi_config_service.dart';
-import '../../error_recovery_service.dart';
+import '../../error_recovery_strategy.dart';
 import '../../cache_service.dart';
 
 /// HAPI 基础 API 客户端
 /// 封装 Dio、JWT 管理、重试逻辑和错误处理
 class HapiApiClient {
-  HapiApiClient(this.config, [this.errorRecoveryService, this.cacheService]) {
+  HapiApiClient(
+    this.config, [
+    ErrorRecoveryStrategy? recoveryStrategy,
+    this.cacheService,
+  ]) : recoveryStrategy = recoveryStrategy ?? RecoveryStrategies.apiDefault {
     dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 10),
@@ -89,7 +93,7 @@ class HapiApiClient {
   }
 
   final HapiConfig config;
-  final ErrorRecoveryService? errorRecoveryService;
+  final ErrorRecoveryStrategy recoveryStrategy;
   final CacheService? cacheService;
   late final Dio dio;
 
@@ -178,31 +182,19 @@ class HapiApiClient {
   }
 
   /// 带重试的请求包装器
+  /// 使用 ErrorRecoveryStrategy 进行智能重试
   Future<T> withRetry<T>({
     required Future<T> Function() action,
     required String operationName,
-    RetryConfig config = RetryConfig.apiDefault,
+    ErrorRecoveryStrategy? strategy,
   }) async {
-    if (errorRecoveryService == null) {
-      // 没有重试服务，直接执行
-      return action();
-    }
+    final effectiveStrategy = strategy ?? recoveryStrategy;
 
-    final result = await errorRecoveryService!.executeWithRetry(
-      action: action,
-      operationName: operationName,
-      config: config,
-    );
-
-    if (result.success) {
-      return result.data as T;
-    } else {
-      throw HapiApiException(
-        result.error?.message ?? 'Request failed',
-        statusCode: result.error?.statusCode,
-        originalError: result.error?.originalError,
-        isRetryable: false, // 已经重试过了
-      );
+    try {
+      return await effectiveStrategy.execute(action);
+    } on DioException catch (e) {
+      // 转换 Dio 异常为 HapiApiException
+      throw handleDioError(e);
     }
   }
 

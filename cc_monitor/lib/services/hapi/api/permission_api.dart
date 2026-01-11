@@ -48,18 +48,4 @@ class PermissionApi {
       throw _client.handleDioError(e);
     }
   }
-
-  /// 响应权限请求 (兼容方法)
-  @Deprecated('Use approvePermission or denyPermission instead')
-  Future<bool> respondPermission({
-    required String sessionId,
-    required String requestId,
-    required bool approved,
-  }) async {
-    if (approved) {
-      return approvePermission(sessionId: sessionId, requestId: requestId);
-    } else {
-      return denyPermission(sessionId: sessionId, requestId: requestId);
-    }
-  }
 }

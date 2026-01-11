@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/message.dart';
+import '../services/message_tracer.dart';
 
 /// 消息列表状态
 class MessagesNotifier extends StateNotifier<List<Message>> {
@@ -130,3 +133,19 @@ final sessionMessagesProvider = Provider.family<List<Message>, String>((
   filtered.sort((a, b) => a.createdAt.compareTo(b.createdAt));
   return filtered;
 });
+
+/// 处理过的消息树 Provider（缓存 MessageTracer 计算结果）
+/// 性能优化：避免在每次 build 时重新计算消息树
+/// 性能优化：使用 autoDispose + keepAlive 实现智能缓存
+final processedMessagesProvider = Provider.family
+    .autoDispose<List<MessageNode>, String>((ref, sessionId) {
+      final messages = ref.watch(sessionMessagesProvider(sessionId));
+
+      // 智能缓存策略：处理结果缓存 5 分钟后自动清理
+      final link = ref.keepAlive();
+      final timer = Timer(const Duration(minutes: 5), link.close);
+      ref.onDispose(timer.cancel);
+
+      // 使用 MessageTracer 处理消息，构建树形结构
+      return MessageTracer.processMessages(messages);
+    });

@@ -1,33 +1,44 @@
 import 'package:flutter/material.dart';
-import '../../common/constants.dart';
 import '../../common/colors.dart';
+import '../base/responsive_builder.dart';
 import 'base_card.dart';
 
-/// 完成消息卡片
-class CompleteMessageCard extends StatelessWidget {
+/// 完成消息卡片 - 继承 BaseMessageCard，使用 Template Method 模式
+class CompleteMessageCard extends BaseMessageCard {
   const CompleteMessageCard({
     super.key,
     required this.title,
-    required this.timestamp,
+    required super.timestamp,
     this.summary,
     this.executionSummary,
     this.duration,
     this.toolCount,
-    this.onTap,
-    this.isRead = false,
+    super.isRead,
   });
 
   final String title;
-  final DateTime timestamp;
   final String? summary;
   final String? executionSummary;
   final int? duration;
   final int? toolCount;
-  final VoidCallback? onTap;
-  final bool isRead;
+
+  // ==================== 实现抽象方法 ====================
 
   @override
-  Widget build(BuildContext context) {
+  IconData getHeaderIcon() => Icons.check_circle;
+
+  @override
+  String getHeaderTitle() => title;
+
+  @override
+  Color getHeaderColor(BuildContext context) => MessageColors.complete;
+
+  // ==================== 实现钩子方法 ====================
+
+  @override
+  Widget buildContent(BuildContext context, ResponsiveValues r) {
+    final theme = Theme.of(context);
+
     // 构建统计信息
     final stats = <String>[];
     if (duration != null && duration! > 0) {
@@ -37,30 +48,62 @@ class CompleteMessageCard extends StatelessWidget {
       stats.add('$toolCount 次工具调用');
     }
 
-    return LegacyMessageCard(
-      type: AppConstants.messageComplete,
-      title: title,
-      timestamp: timestamp,
-      subtitle: summary,
-      summary: executionSummary,
-      onTap: onTap,
-      isRead: isRead,
-      // trailing 已移除：状态标签"已完成"已提供足够信息
-      child:
-          stats.isNotEmpty
-              ? Wrap(
-                spacing: 12,
-                children:
-                    stats.map((stat) => _buildStatChip(context, stat)).toList(),
-              )
-              : null,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 摘要
+        if (summary != null && summary!.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.only(bottom: r.contentGap),
+            child: Text(
+              summary!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: r.isCompact ? 12 : 14,
+              ),
+            ),
+          ),
+        // 执行摘要（高亮显示）
+        if (executionSummary != null &&
+            executionSummary!.isNotEmpty &&
+            executionSummary != summary)
+          Padding(
+            padding: EdgeInsets.only(bottom: r.contentGap),
+            child: Container(
+              padding: EdgeInsets.all(r.contentGap),
+              decoration: BoxDecoration(
+                color: MessageColors.complete.withValues(alpha: 0.1),
+                borderRadius: r.cardBorderRadiusGeometry,
+              ),
+              child: Text(
+                executionSummary!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: MessageColors.complete.withValues(alpha: 0.9),
+                  fontSize: r.isCompact ? 11 : 12,
+                ),
+              ),
+            ),
+          ),
+        // 统计信息
+        if (stats.isNotEmpty)
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children:
+                stats.map((stat) => _buildStatChip(context, stat, r)).toList(),
+          ),
+      ],
     );
   }
 
-  Widget _buildStatChip(BuildContext context, String text) {
+  // ==================== 私有辅助方法 ====================
+
+  Widget _buildStatChip(BuildContext context, String text, ResponsiveValues r) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: r.isCompact ? 6 : 8,
+        vertical: r.isCompact ? 3 : 4,
+      ),
       decoration: BoxDecoration(
         color: MessageColors.complete.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -70,6 +113,7 @@ class CompleteMessageCard extends StatelessWidget {
         style: theme.textTheme.bodySmall?.copyWith(
           color: MessageColors.complete,
           fontWeight: FontWeight.w500,
+          fontSize: r.isCompact ? 10 : 11,
         ),
       ),
     );

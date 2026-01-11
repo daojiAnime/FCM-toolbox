@@ -185,10 +185,31 @@ final cacheServiceProvider = Provider<CacheService>((ref) {
 
 /// 缓存键常量
 class CacheKeys {
+  CacheKeys._();
+
+  /// 会话列表
   static const String sessions = 'sessions';
+
+  /// 机器列表
   static const String machines = 'machines';
-  static String sessionDetail(String id) => 'session:$id';
+
+  /// 会话消息前缀 (使用 ${sessionMessages}_$sessionId 格式)
+  static const String sessionMessages = 'session_messages';
+
+  /// 会话详情前缀
+  static const String sessionDetail = 'session_detail';
+
+  /// 构建会话消息缓存键
+  static String messagesKey(String sessionId) =>
+      '${sessionMessages}_$sessionId';
+
+  /// 构建会话详情缓存键
+  static String detailKey(String sessionId) => '${sessionDetail}_$sessionId';
+
+  /// 会话文件缓存键
   static String sessionFiles(String id, String? path) =>
       'session_files:$id:${path ?? 'root'}';
+
+  /// 会话 diff 缓存键
   static String sessionDiff(String id) => 'session_diff:$id';
 }
