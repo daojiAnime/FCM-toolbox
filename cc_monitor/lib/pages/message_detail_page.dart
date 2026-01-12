@@ -1400,7 +1400,7 @@ class _AdvancedPermissionSheetState extends State<_AdvancedPermissionSheet> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      initialValue: _mode,
+                      value: _mode,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         hintText: '选择权限模式（可选）',

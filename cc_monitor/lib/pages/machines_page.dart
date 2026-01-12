@@ -742,7 +742,7 @@ class _SpawnSessionDialogState extends ConsumerState<_SpawnSessionDialog> {
                 const SizedBox(height: 8),
                 // 会话类型
                 DropdownButtonFormField<String?>(
-                  initialValue: _sessionType,
+                  value: _sessionType,
                   decoration: const InputDecoration(
                     labelText: '会话类型',
                     border: OutlineInputBorder(),
